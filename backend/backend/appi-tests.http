@@ -1,0 +1,9 @@
+### Prova de Registre d'Usuari
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "alumneTFG",
+  "email": "alumne@tecnocampus.cat",
+  "password": "contrasenyaSecreta123"
+}
