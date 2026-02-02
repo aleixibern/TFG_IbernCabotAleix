@@ -3,8 +3,7 @@ package cat.tecnocampus.backend.dto;
 import lombok.Data;
 
 @Data
-public class RegisterRequest {
-    private String username;
+public class Login {
     private String email;
     private String password;
 }
