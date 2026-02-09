@@ -13,6 +13,24 @@ POST http://localhost:8080/api/auth/login
 Content-Type: application/json
 
 {
-  "email": "alumne@tecnocampus.cat",
-  "password": "contrasenyaSecreta123"
+  "email": "test@front.com",
+  "password": "123456"
 }
+
+### Obtenir el meu perfil
+GET http://localhost:8080/api/users/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QGZyb250LmNvbSIsImlhdCI6MTc3MDY1Mzg2OSwiZXhwIjoxNzcwNzQwMjY5fQ.Y5M_zGjEQXjbY5FXqQuVVrtnzqkNpfroMnXc7npf5n0
+
+### Crear un projecte nou
+POST http://localhost:8080/api/projects
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QGZyb250LmNvbSIsImlhdCI6MTc3MDY1Mzg2OSwiZXhwIjoxNzcwNzQwMjY5fQ.Y5M_zGjEQXjbY5FXqQuVVrtnzqkNpfroMnXc7npf5n0
+Content-Type: application/json
+
+{
+  "title": "Projecte TFG",
+  "description": "Desenvolupament del backend"
+}
+
+### Veure els meus projectes
+GET http://localhost:8080/api/projects
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QGZyb250LmNvbSIsImlhdCI6MTc3MDY1Mzg2OSwiZXhwIjoxNzcwNzQwMjY5fQ.Y5M_zGjEQXjbY5FXqQuVVrtnzqkNpfroMnXc7npf5n0

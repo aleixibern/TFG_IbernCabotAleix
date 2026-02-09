@@ -1,4 +1,4 @@
-
+// frontend/tailwind.config.js
 const { heroui } = require("@heroui/react");
 
 /** @type {import('tailwindcss').Config} */
@@ -12,5 +12,38 @@ module.exports = {
     extend: {},
   },
   darkMode: "class",
-  plugins: [heroui()],
+  plugins: [
+    heroui({
+      themes: {
+        dark: {
+          colors: {
+            background: "#000000", // Fons de la pàgina (Negre pur)
+            foreground: "#ECEDEE", // Text principal
+            
+            // AQUESTA ÉS LA CLAU QUE FALTAVA:
+            content1: "#18181b",   // Gris molt fosc per a targetes i menús (Zinc-900)
+            
+            primary: {
+              DEFAULT: "#006FEE",
+              foreground: "#FFFFFF",
+            },
+            focus: "#006FEE",
+          },
+          layout: {
+            disabledOpacity: "0.3",
+            radius: {
+              small: "4px",
+              medium: "6px",
+              large: "8px",
+            },
+            borderWidth: {
+              small: "1px",
+              medium: "2px",
+              large: "3px",
+            },
+          },
+        },
+      },
+    }),
+  ],
 };
