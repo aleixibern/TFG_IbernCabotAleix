@@ -1,47 +1,52 @@
 import { useEffect, useState } from 'react';
-import { Card, CardBody, Spinner, CardHeader, Divider, Button, useDisclosure } from "@heroui/react"; // <--- Afegeix useDisclosure
+import { Card, CardBody, Spinner, CardHeader, Divider, Button, useDisclosure } from "@heroui/react";
 import api from '../api/axios';
 import type { User } from '../types/User';
 import type { Project } from '../types/Project';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '../layouts/MainLayout';
 import { ProjectCard } from '../components/ProjectCard';
-import { CreateProjectModal } from '../components/CreateProjectModal'; // <--- Importa el Modal
+import { CreateProjectModal } from '../components/CreateProjectModal';
 
 export default function DashboardPage() {
     const navigate = useNavigate();
-    const { isOpen, onOpen, onOpenChange } = useDisclosure(); // <--- Hook per controlar el modal
+    
+    // Hook per controlar si el modal està obert o tancat
+    const { isOpen, onOpen, onOpenChange } = useDisclosure();
     
     const [user, setUser] = useState<User | null>(null);
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // ... (El useEffect es queda igual) ...
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const userRes = await api.get<User>('/users/me');
                 setUser(userRes.data);
+
                 const projectsRes = await api.get<Project[]>('/projects');
                 setProjects(projectsRes.data);
             } catch (error) {
                 console.error("Error carregant dades", error);
+                // Si falla l'autenticació, fora
+                // localStorage.removeItem('token');
+                // navigate('/login');
             } finally {
                 setLoading(false);
             }
         };
+
         fetchData();
     }, []);
 
-    // Funció que passarem al modal per actualitzar la llista
+    // Aquesta funció s'executa quan el Modal ens diu "Projecte Creat!"
     const handleProjectCreated = (newProject: Project) => {
-        // Afegim el nou projecte al principi de la llista
         setProjects([newProject, ...projects]);
     };
 
     if (loading) {
         return (
-            <div className="flex h-screen items-center justify-center bg-background">
+            <div className="flex h-screen items-center justify-center bg-black text-white">
                 <Spinner size="lg" color="primary" />
             </div>
         );
@@ -50,7 +55,7 @@ export default function DashboardPage() {
     return (
         <MainLayout username={user?.username} email={user?.email}>
             
-            {/* AFEGIM EL MODAL AQUÍ (Invisible fins que s'obre) */}
+            {/* EL MODAL ESTÀ AQUÍ: Connectat amb les variables isOpen i onOpenChange */}
             <CreateProjectModal 
                 isOpen={isOpen} 
                 onOpenChange={onOpenChange}
@@ -58,23 +63,27 @@ export default function DashboardPage() {
             />
 
             <div className="flex flex-col gap-6 pb-10">
+                {/* Capçalera amb el Botó */}
                 <div className="flex justify-between items-center">
                     <div>
                         <h1 className="text-3xl font-bold text-white">Panell de Control</h1>
                         <p className="text-default-500">Benvingut de nou, {user?.username}.</p>
                     </div>
-                    {/* Connectem el botó amb la funció d'obrir */}
-                    <Button color="primary" variant="shadow" onPress={onOpen}>
+                    
+                    {/* EL BOTÓ D'OBRIR EL MODAL */}
+                    <Button 
+                        color="primary" 
+                        variant="shadow" 
+                        onPress={onOpen}
+                        className="font-semibold"
+                    >
                         + Nou Projecte
                     </Button>
                 </div>
 
-                {/* ... (La resta de targetes i llistes es queda igual) ... */}
-                
-                {/* Només assegura't que la resta del codi segueix aquí a sota */}
+                {/* Resum de l'usuari */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                     {/* ... Targeta perfil ... */}
-                     <Card className="border border-white/10 shadow-md bg-[#18181b]">
+                    <Card className="border border-white/10 shadow-md bg-zinc-900">
                         <CardHeader className="flex gap-3 pb-2">
                             <div className="flex flex-col">
                                 <p className="text-md font-bold text-white">El meu Perfil</p>
@@ -83,14 +92,15 @@ export default function DashboardPage() {
                         <Divider className="bg-white/10"/>
                         <CardBody>
                             <p className="text-gray-300">Email: <span className="font-mono text-small text-primary">{user?.email}</span></p>
-                            {/* Actualitzem el comptador perquè reaccioni als canvis */}
                             <p className="text-gray-300">Projectes totals: <span className="font-bold">{projects.length}</span></p>
                         </CardBody>
                     </Card>
                 </div>
 
+                {/* Llista de Projectes */}
                 <div>
                     <h2 className="text-xl font-bold text-white mb-4">Els meus Projectes recents</h2>
+                    
                     {projects.length === 0 ? (
                         <Card className="border border-white/10 bg-white/5 border-dashed">
                             <CardBody className="flex items-center justify-center py-12">
@@ -106,6 +116,7 @@ export default function DashboardPage() {
                     )}
                 </div>
             </div>
+
         </MainLayout>
     );
 }

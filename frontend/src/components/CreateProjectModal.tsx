@@ -15,7 +15,7 @@ import type { Project } from "../types/Project";
 interface CreateProjectModalProps {
   isOpen: boolean;
   onOpenChange: () => void;
-  onProjectCreated: (newProject: Project) => void; // Funció per avisar al pare
+  onProjectCreated: (newProject: Project) => void;
 }
 
 export const CreateProjectModal = ({ isOpen, onOpenChange, onProjectCreated }: CreateProjectModalProps) => {
@@ -34,47 +34,59 @@ export const CreateProjectModal = ({ isOpen, onOpenChange, onProjectCreated }: C
     setError("");
 
     try {
-      // 1. Enviem les dades al Backend
       const response = await api.post<Project>("/projects", formData);
-      
-      // 2. Avisem al Dashboard que tenim un projecte nou
       onProjectCreated(response.data);
-      
-      // 3. Resetegem el formulari i tanquem
-      setFormData({ title: "", description: "" });
-      onClose();
+      setFormData({ title: "", description: "" }); // Netejar formulari
+      onClose(); // Tancar modal
     } catch (err) {
       console.error(err);
-      setError("Error creant el projecte. Torna-ho a provar.");
+      setError("Error al crear el projecte.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange} placement="top-center" backdrop="blur">
-      <ModalContent>
+    <Modal 
+      isOpen={isOpen} 
+      onOpenChange={onOpenChange} 
+      placement="top-center" 
+      backdrop="blur"
+    >
+      <ModalContent className="bg-zinc-900 border border-white/10 text-white">
         {(onClose) => (
           <>
-            <ModalHeader className="flex flex-col gap-1">Nou Projecte</ModalHeader>
+            <ModalHeader className="flex flex-col gap-1 text-xl font-bold">
+              Nou Projecte
+            </ModalHeader>
             <ModalBody>
               <Input
                 autoFocus
                 label="Títol del projecte"
-                placeholder="Ex: TFG Desenvolupament Web"
+                placeholder="Ex: El meu TFG"
                 variant="bordered"
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
                 isRequired
+                classNames={{
+                  input: "text-white",
+                  label: "text-white/70",
+                  inputWrapper: "border-white/20 hover:border-primary group-data-[focus=true]:border-primary"
+                }}
               />
               <Textarea
                 label="Descripció"
-                placeholder="De què tracta aquest projecte?"
+                placeholder="Explica breument de què va..."
                 variant="bordered"
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
+                classNames={{
+                  input: "text-white",
+                  label: "text-white/70",
+                  inputWrapper: "border-white/20 hover:border-primary group-data-[focus=true]:border-primary"
+                }}
               />
               {error && <p className="text-danger text-small">{error}</p>}
             </ModalBody>
