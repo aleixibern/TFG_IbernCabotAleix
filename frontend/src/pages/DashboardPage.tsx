@@ -11,7 +11,7 @@ import { CreateProjectModal } from '../components/CreateProjectModal';
 export default function DashboardPage() {
     const navigate = useNavigate();
     
-    // Hook per controlar si el modal està obert o tancat
+    
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
     
     const [user, setUser] = useState<User | null>(null);
@@ -28,9 +28,7 @@ export default function DashboardPage() {
                 setProjects(projectsRes.data);
             } catch (error) {
                 console.error("Error carregant dades", error);
-                // Si falla l'autenticació, fora
-                // localStorage.removeItem('token');
-                // navigate('/login');
+                
             } finally {
                 setLoading(false);
             }
@@ -39,7 +37,7 @@ export default function DashboardPage() {
         fetchData();
     }, []);
 
-    // Aquesta funció s'executa quan el Modal ens diu "Projecte Creat!"
+   
     const handleProjectCreated = (newProject: Project) => {
         setProjects([newProject, ...projects]);
     };
@@ -55,7 +53,7 @@ export default function DashboardPage() {
     return (
         <MainLayout username={user?.username} email={user?.email}>
             
-            {/* EL MODAL ESTÀ AQUÍ: Connectat amb les variables isOpen i onOpenChange */}
+            
             <CreateProjectModal 
                 isOpen={isOpen} 
                 onOpenChange={onOpenChange}
@@ -63,14 +61,14 @@ export default function DashboardPage() {
             />
 
             <div className="flex flex-col gap-6 pb-10">
-                {/* Capçalera amb el Botó */}
+               
                 <div className="flex justify-between items-center">
                     <div>
                         <h1 className="text-3xl font-bold text-white">Panell de Control</h1>
                         <p className="text-default-500">Benvingut de nou, {user?.username}.</p>
                     </div>
                     
-                    {/* EL BOTÓ D'OBRIR EL MODAL */}
+                   
                     <Button 
                         color="primary" 
                         variant="shadow" 
@@ -81,7 +79,7 @@ export default function DashboardPage() {
                     </Button>
                 </div>
 
-                {/* Resum de l'usuari */}
+                
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Card className="border border-white/10 shadow-md bg-zinc-900">
                         <CardHeader className="flex gap-3 pb-2">
@@ -97,7 +95,7 @@ export default function DashboardPage() {
                     </Card>
                 </div>
 
-                {/* Llista de Projectes */}
+               
                 <div>
                     <h2 className="text-xl font-bold text-white mb-4">Els meus Projectes recents</h2>
                     
