@@ -19,41 +19,32 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
 
-    // Mètode per CREAR un projecte
     public ProjectResponse createProject(ProjectRequest request, String userEmail) {
-        // 1. Busquem l'usuari propietari
         User owner = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Usuari no trobat"));
 
-        // 2. Creem el projecte
         Project project = Project.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
-                .owner(owner) // <--- Aquí fem la relació!
+                .owner(owner)
                 .build();
 
-        // 3. Guardem a BBDD
         Project savedProject = projectRepository.save(project);
 
-        // 4. Convertim a DTO per tornar-ho
         return mapToResponse(savedProject);
     }
 
-    // Mètode per LLISTAR els projectes d'un usuari
     public List<ProjectResponse> getUserProjects(String userEmail) {
         User owner = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Usuari no trobat"));
 
-        // Fem servir el mètode màgic del repositori que vam crear l'altre dia
         List<Project> projects = projectRepository.findAllByOwnerId(owner.getId());
 
-        // Convertim la llista d'Entitats a llista de DTOs
         return projects.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
-    // Utilitat per convertir (Mapper)
     private ProjectResponse mapToResponse(Project project) {
         return ProjectResponse.builder()
                 .id(project.getId())
@@ -61,5 +52,16 @@ public class ProjectService {
                 .description(project.getDescription())
                 .createdAt(project.getCreatedAt())
                 .build();
+    }
+
+    public void deleteProject(Long projectId, String currentUserEmail) {
+        var project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Projecte no trobat"));
+
+        if (!project.getOwner().getEmail().equals(currentUserEmail)) {
+            throw new RuntimeException("No tens permís per eliminar aquest projecte");
+        }
+
+        projectRepository.delete(project);
     }
 }

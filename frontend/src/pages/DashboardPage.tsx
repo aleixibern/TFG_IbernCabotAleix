@@ -3,15 +3,13 @@ import { Card, CardBody, Spinner, CardHeader, Divider, Button, useDisclosure } f
 import api from '../api/axios';
 import type { User } from '../types/User';
 import type { Project } from '../types/Project';
-import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '../layouts/MainLayout';
 import { ProjectCard } from '../components/ProjectCard';
 import { CreateProjectModal } from '../components/CreateProjectModal';
 
 export default function DashboardPage() {
-    const navigate = useNavigate();
     
-    
+    // Control del Modal
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
     
     const [user, setUser] = useState<User | null>(null);
@@ -21,14 +19,16 @@ export default function DashboardPage() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const userRes = await api.get<User>('/users/me');
+                // Carreguem usuari i projectes en paral·lel
+                const [userRes, projectsRes] = await Promise.all([
+                    api.get<User>('/users/me'),
+                    api.get<Project[]>('/projects')
+                ]);
+                
                 setUser(userRes.data);
-
-                const projectsRes = await api.get<Project[]>('/projects');
                 setProjects(projectsRes.data);
             } catch (error) {
                 console.error("Error carregant dades", error);
-                
             } finally {
                 setLoading(false);
             }
@@ -37,9 +37,14 @@ export default function DashboardPage() {
         fetchData();
     }, []);
 
-   
+    // Quan es crea un projecte nou, l'afegim a la llista
     const handleProjectCreated = (newProject: Project) => {
         setProjects([newProject, ...projects]);
+    };
+
+    // Quan s'esborra un projecte, el traiem de la llista (NOVA FUNCIÓ)
+    const handleProjectDeleted = (deletedId: number) => {
+        setProjects(projects.filter(p => p.id !== deletedId));
     };
 
     if (loading) {
@@ -53,7 +58,7 @@ export default function DashboardPage() {
     return (
         <MainLayout username={user?.username} email={user?.email}>
             
-            
+            {/* Modal de Creació */}
             <CreateProjectModal 
                 isOpen={isOpen} 
                 onOpenChange={onOpenChange}
@@ -61,14 +66,13 @@ export default function DashboardPage() {
             />
 
             <div className="flex flex-col gap-6 pb-10">
-               
+                {/* Capçalera */}
                 <div className="flex justify-between items-center">
                     <div>
                         <h1 className="text-3xl font-bold text-white">Panell de Control</h1>
                         <p className="text-default-500">Benvingut de nou, {user?.username}.</p>
                     </div>
                     
-                   
                     <Button 
                         color="primary" 
                         variant="shadow" 
@@ -79,13 +83,11 @@ export default function DashboardPage() {
                     </Button>
                 </div>
 
-                
+                {/* Resum Usuari */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Card className="border border-white/10 shadow-md bg-zinc-900">
-                        <CardHeader className="flex gap-3 pb-2">
-                            <div className="flex flex-col">
-                                <p className="text-md font-bold text-white">El meu Perfil</p>
-                            </div>
+                        <CardHeader className="pb-2">
+                            <p className="text-md font-bold text-white">El meu Perfil</p>
                         </CardHeader>
                         <Divider className="bg-white/10"/>
                         <CardBody>
@@ -95,7 +97,7 @@ export default function DashboardPage() {
                     </Card>
                 </div>
 
-               
+                {/* Llista de Projectes */}
                 <div>
                     <h2 className="text-xl font-bold text-white mb-4">Els meus Projectes recents</h2>
                     
@@ -108,7 +110,11 @@ export default function DashboardPage() {
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {projects.map((proj) => (
-                                <ProjectCard key={proj.id} project={proj} />
+                                <ProjectCard 
+                                    key={proj.id} 
+                                    project={proj} 
+                                    onDelete={handleProjectDeleted} // <--- Passem la funció aquí
+                                />
                             ))}
                         </div>
                     )}

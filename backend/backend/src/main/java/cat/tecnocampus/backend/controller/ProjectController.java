@@ -9,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -33,5 +34,16 @@ public class ProjectController {
         String email = auth.getName();
 
         return ResponseEntity.ok(projectService.getUserProjects(email));
+    }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProject(@PathVariable Long id, Principal principal) {
+        try {
+            projectService.deleteProject(id, principal.getName());
+
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            // Si el servei es queixa (no és el propietari), tornem error 403
+            return ResponseEntity.status(403).build();
+        }
     }
 }
