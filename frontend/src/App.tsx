@@ -19,20 +19,12 @@ const DashboardPlaceholder = () => (
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        
-        {/* --- ZONA PROTEGIDA --- */}
-        <Route element={<PrivateRoute />}>
-            <Route path="/dashboard" element={<DashboardPage/>} />
-            {/* Aquí afegirem més rutes privades en el futur (Perfil, Projectes...) */}
-        </Route>
-
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      <Route path="/" element={<Navigate to="/login" />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/dashboard" element={<DashboardPage />} />
+    </Routes>
   );
 }
 

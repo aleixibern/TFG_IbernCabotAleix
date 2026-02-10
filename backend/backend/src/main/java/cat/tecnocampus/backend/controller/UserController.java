@@ -30,7 +30,7 @@ public class UserController {
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
-                .profilePictureUrl(user.getProfilePictureUrl())
+                //.profilePictureUrl(user.getProfilePictureUrl())
                 .build();
 
         return ResponseEntity.ok(response);
