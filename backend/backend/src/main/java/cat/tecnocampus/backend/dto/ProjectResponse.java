@@ -10,5 +10,6 @@ public class ProjectResponse {
     private Long id;
     private String title;
     private String description;
-    private LocalDateTime createdAt;
+    private String createdAt;
+    private UserResponse owner;
 }

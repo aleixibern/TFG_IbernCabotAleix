@@ -21,14 +21,17 @@ public class ApplicationConfig {
 
     @Bean
     public UserDetailsService userDetailsService() {
-        return username -> userRepository.findByEmail(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuari no trobat"));
+        // Busquem per email perquè el token porta l'email
+        return email -> userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuari no trobat amb email: " + email));
     }
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        // Recorda: Spring Security 7 demana el UserDetailsService al constructor
+        // --- CANVI AQUI ---
+        // Passem el userDetailsService() DIRECTAMENT al constructor
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService());
+
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }

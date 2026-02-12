@@ -4,11 +4,13 @@ import cat.tecnocampus.backend.domain.Project;
 import cat.tecnocampus.backend.domain.User;
 import cat.tecnocampus.backend.dto.ProjectRequest;
 import cat.tecnocampus.backend.dto.ProjectResponse;
+import cat.tecnocampus.backend.dto.UserResponse;
 import cat.tecnocampus.backend.repository.ProjectRepository;
 import cat.tecnocampus.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,6 +21,7 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
 
+    // Crear Projecte
     public ProjectResponse createProject(ProjectRequest request, String userEmail) {
         User owner = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Usuari no trobat"));
@@ -27,41 +30,47 @@ public class ProjectService {
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .owner(owner)
+                .createdAt(LocalDateTime.now()) // Posem la data d'ara
                 .build();
 
         Project savedProject = projectRepository.save(project);
-
         return mapToResponse(savedProject);
     }
 
+    // Llistar projectes de l'usuari
     public List<ProjectResponse> getUserProjects(String userEmail) {
-        User owner = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("Usuari no trobat"));
-
-        List<Project> projects = projectRepository.findAllByOwnerId(owner.getId());
-
-        return projects.stream()
+        return projectRepository.findByOwnerEmail(userEmail)
+                .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
+    // Buscar per ID (per esborrar)
+    public Project findById(Long id) {
+        return projectRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Projecte no trobat"));
+    }
+
+    // Esborrar projecte (Amb lògica de seguretat)
+    public void deleteProject(Long id, String username) {
+        Project project = findById(id);
+        if (!project.getOwner().getEmail().equals(username)) {
+            throw new RuntimeException("No autoritzat");
+        }
+        projectRepository.delete(project);
+    }
+
+    // --- MAPPER (Aquí és on tenies l'error vermell) ---
     private ProjectResponse mapToResponse(Project project) {
         return ProjectResponse.builder()
                 .id(project.getId())
                 .title(project.getTitle())
                 .description(project.getDescription())
-                .createdAt(project.getCreatedAt())
+                .createdAt(project.getCreatedAt() != null ? project.getCreatedAt().toString() : "")
+                .owner(UserResponse.builder()
+                        .email(project.getOwner().getEmail())
+                        .username(project.getOwner().getUsername()) // Ara això no petarà
+                        .build())
                 .build();
-    }
-
-    public void deleteProject(Long projectId, String currentUserEmail) {
-        var project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new RuntimeException("Projecte no trobat"));
-
-        if (!project.getOwner().getEmail().equals(currentUserEmail)) {
-            throw new RuntimeException("No tens permís per eliminar aquest projecte");
-        }
-
-        projectRepository.delete(project);
     }
 }

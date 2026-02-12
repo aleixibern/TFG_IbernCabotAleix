@@ -8,8 +8,6 @@ import java.util.List;
 
 @Repository
 public interface ProjectRepository extends JpaRepository<Project, Long> {
-
-    // Spring Data JPA crea la query SQL automàticament amb aquest nom:
-    // "SELECT * FROM projects WHERE user_id = ?"
-    List<Project> findAllByOwnerId(Long userId);
+    // Aquesta línia és vital:
+    List<Project> findByOwnerEmail(String email);
 }
