@@ -21,7 +21,6 @@ public class ProjectController {
 
     @PostMapping
     public ResponseEntity<ProjectResponse> createProject(@RequestBody ProjectRequest request) {
-        // Obtenim l'email de l'usuari autenticat (del Token JWT)
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String email = auth.getName();
 
@@ -42,8 +41,12 @@ public class ProjectController {
 
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
-            // Si el servei es queixa (no és el propietari), tornem error 403
             return ResponseEntity.status(403).build();
         }
+    }
+    @GetMapping("/{id}")
+    public ResponseEntity<ProjectResponse> getProject(@PathVariable Long id, Principal principal) {
+        String email = principal.getName();
+        return ResponseEntity.ok(projectService.getProjectById(id, email));
     }
 }

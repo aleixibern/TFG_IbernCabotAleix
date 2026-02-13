@@ -21,7 +21,6 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
 
-    // Crear Projecte
     public ProjectResponse createProject(ProjectRequest request, String userEmail) {
         User owner = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Usuari no trobat"));
@@ -30,14 +29,13 @@ public class ProjectService {
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .owner(owner)
-                .createdAt(LocalDateTime.now()) // Posem la data d'ara
+                .createdAt(LocalDateTime.now())
                 .build();
 
         Project savedProject = projectRepository.save(project);
         return mapToResponse(savedProject);
     }
 
-    // Llistar projectes de l'usuari
     public List<ProjectResponse> getUserProjects(String userEmail) {
         return projectRepository.findByOwnerEmail(userEmail)
                 .stream()
@@ -45,13 +43,11 @@ public class ProjectService {
                 .collect(Collectors.toList());
     }
 
-    // Buscar per ID (per esborrar)
     public Project findById(Long id) {
         return projectRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Projecte no trobat"));
     }
 
-    // Esborrar projecte (Amb lògica de seguretat)
     public void deleteProject(Long id, String username) {
         Project project = findById(id);
         if (!project.getOwner().getEmail().equals(username)) {
@@ -60,7 +56,6 @@ public class ProjectService {
         projectRepository.delete(project);
     }
 
-    // --- MAPPER (Aquí és on tenies l'error vermell) ---
     private ProjectResponse mapToResponse(Project project) {
         return ProjectResponse.builder()
                 .id(project.getId())
@@ -72,5 +67,12 @@ public class ProjectService {
                         .username(project.getOwner().getUsername()) // Ara això no petarà
                         .build())
                 .build();
+    }
+    public ProjectResponse getProjectById(Long id, String userEmail) {
+        Project project = findById(id);
+        if (!project.getOwner().getEmail().equals(userEmail)) {
+            throw new RuntimeException("No autoritzat per veure aquest projecte");
+        }
+        return mapToResponse(project);
     }
 }

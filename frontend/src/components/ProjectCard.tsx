@@ -1,26 +1,24 @@
-import { Card, CardHeader, CardBody, CardFooter, Divider, Link, Image, Button } from "@heroui/react";
+import { Card, CardHeader, CardBody, CardFooter, Divider, Image, Button } from "@heroui/react";
+import { useNavigate } from "react-router-dom"; 
 import type { Project } from "../types/Project";
 import api from "../api/axios";
 
 interface ProjectCardProps {
   project: Project;
-  onDelete: (id: number) => void; // <--- Callback per avisar al pare quan s'esborri
+  onDelete: (id: number) => void;
 }
 
 export const ProjectCard = ({ project, onDelete }: ProjectCardProps) => {
+  const navigate = useNavigate(); 
 
   const handleDelete = async () => {
-    // 1. Confirmació de seguretat (molt important)
     if (!window.confirm(`Estàs segur que vols esborrar el projecte "${project.title}"?`)) {
       return;
     }
 
     try {
-      // 2. Cridem al Backend per esborrar
       await api.delete(`/projects/${project.id}`);
-      
-      // 3. Si tot va bé, avisem al Dashboard
-      onDelete(project.id);
+      onDelete(project.id); 
     } catch (error) {
       console.error("Error esborrant projecte:", error);
       alert("No s'ha pogut esborrar. Potser no ets el propietari?");
@@ -56,16 +54,16 @@ export const ProjectCard = ({ project, onDelete }: ProjectCardProps) => {
       <Divider className="bg-white/10"/>
       
       <CardFooter className="flex justify-between items-center">
-        <Link
-          isExternal
-          showAnchorIcon
-          href="#"
-          className="text-primary"
+        
+        <Button 
+            color="primary" 
+            variant="light" 
+            onPress={() => navigate(`/project/${project.id}`)}
         >
           Veure Detalls
-        </Link>
+        </Button>
         
-        {/* BOTÓ PAPERERA */}
+        
         <Button 
             isIconOnly 
             color="danger" 

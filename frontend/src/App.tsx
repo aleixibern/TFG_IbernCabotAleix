@@ -3,6 +3,7 @@ import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import { PrivateRoute } from './components/PrivateRoute'; 
 import DashboardPage from './pages/DashboardPage';
+import ProjectBoardPage from './pages/ProjectBoardPage';
 
 const DashboardPlaceholder = () => (
   <div className="flex flex-col items-center justify-center h-screen text-white">
@@ -24,6 +25,7 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
+      <Route path="/project/:id" element={<ProjectBoardPage />} />
     </Routes>
   );
 }
