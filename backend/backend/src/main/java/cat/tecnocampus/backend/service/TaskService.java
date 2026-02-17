@@ -79,4 +79,18 @@ public class TaskService {
                 .createdAt(task.getCreatedAt() != null ? task.getCreatedAt().toString() : "")
                 .build();
     }
+    public TaskResponse updateTask(Long taskId, TaskRequest request, String userEmail) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Tasca no trobada"));
+
+        if (!task.getProject().getOwner().getEmail().equals(userEmail)) {
+            throw new RuntimeException("No autoritzat");
+        }
+
+        task.setTitle(request.getTitle());
+        task.setDescription(request.getDescription());
+
+        Task updatedTask = taskRepository.save(task);
+        return mapToResponse(updatedTask);
+    }
 }
