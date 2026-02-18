@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -17,6 +18,7 @@ public class TaskController {
 
     private final TaskService taskService;
 
+    // Aquests dos estan bé perquè tenen la ruta completa
     @GetMapping("/projects/{projectId}/tasks")
     public ResponseEntity<List<TaskResponse>> getProjectTasks(@PathVariable Long projectId, Principal principal) {
         return ResponseEntity.ok(taskService.getTasksByProject(projectId, principal.getName()));
@@ -27,18 +29,21 @@ public class TaskController {
         return ResponseEntity.ok(taskService.createTask(projectId, request, principal.getName()));
     }
 
-    @PutMapping("/tasks/{taskId}/status")
-    public ResponseEntity<TaskResponse> updateTaskStatus(@PathVariable Long taskId, @RequestBody TaskRequest request, Principal principal) {
-        return ResponseEntity.ok(taskService.updateTaskStatus(taskId, request.getStatus(), principal.getName()));
+    // --- CORRECCIÓ AQUÍ BAIX: AFEGIR "/tasks" ---
+
+    @PutMapping("/tasks/{id}/status") // <--- ABANS: "/{id}/status"
+    public ResponseEntity<TaskResponse> updateTaskStatus(@PathVariable Long id, @RequestBody Map<String, String> body, Principal principal) {
+        return ResponseEntity.ok(taskService.updateTaskStatus(id, body.get("status"), principal.getName()));
     }
 
-    @DeleteMapping("/tasks/{taskId}")
-    public ResponseEntity<Void> deleteTask(@PathVariable Long taskId, Principal principal) {
-        taskService.deleteTask(taskId, principal.getName());
-        return ResponseEntity.ok().build();
+    @PutMapping("/tasks/{id}") // <--- ABANS: "/{id}"
+    public ResponseEntity<TaskResponse> updateTask(@PathVariable Long id, @RequestBody TaskRequest request, Principal principal) {
+        return ResponseEntity.ok(taskService.updateTask(id, request.getTitle(), request.getDescription(), principal.getName()));
     }
-    @PutMapping("/tasks/{taskId}")
-    public ResponseEntity<TaskResponse> updateTask(@PathVariable Long taskId, @RequestBody TaskRequest request, Principal principal) {
-        return ResponseEntity.ok(taskService.updateTask(taskId, request, principal.getName()));
+
+    @DeleteMapping("/tasks/{id}") // <--- ABANS: "/{id}"
+    public ResponseEntity<Void> deleteTask(@PathVariable Long id, Principal principal) {
+        taskService.deleteTask(id, principal.getName());
+        return ResponseEntity.noContent().build();
     }
 }

@@ -5,4 +5,5 @@ export interface Project {
     // Aquests són els camps que et donen error en vermell:
     username: string; 
     email: string;
+    members: string[];
 }

@@ -64,38 +64,54 @@ public class ProjectService {
                 .id(project.getId())
                 .title(project.getTitle())
                 .description(project.getDescription())
+                // .status(project.getStatus().name())
                 .createdAt(project.getCreatedAt() != null ? project.getCreatedAt().toString() : "")
-                .owner(UserResponse.builder()
-                        .email(project.getOwner().getEmail())
-                        .username(project.getOwner().getUsername())
-                        .build())
+                .username(project.getOwner().getUsername())
+                .email(project.getOwner().getEmail())
+                .members(project.getMembers().stream()
+                        .map(user -> user.getEmail())
+                        .collect(Collectors.toList()))
                 .build();
     }
-    public ProjectResponse getProjectById(Long id, String userEmail) {
-        Project project = findById(id);
-        if (!project.getOwner().getEmail().equals(userEmail)) {
-            throw new RuntimeException("No autoritzat per veure aquest projecte");
+    public ProjectResponse getProjectById(Long id, String email) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Projecte no trobat"));
+
+        boolean isOwner = project.getOwner().getEmail().equals(email);
+
+        boolean isMember = project.getMembers().stream()
+                .anyMatch(m -> m.getEmail().equals(email));
+
+        if (!isOwner && !isMember) {
+            throw new RuntimeException("No tens permís per veure aquest projecte");
         }
+
         return mapToResponse(project);
     }
     public void sendInvitation(Long projectId, String emailToInvite, String ownerEmail) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Projecte no trobat"));
 
-        if (!project.getOwner().getEmail().equals(ownerEmail)) {
-            throw new RuntimeException("Només el propietari pot enviar invitacions");
+        boolean isMember = project.getMembers().stream()
+                .anyMatch(m -> m.getEmail().equals(ownerEmail));
+        boolean isOwner = project.getOwner().getEmail().equals(ownerEmail);
+
+        if (!isOwner && !isMember) {
+            throw new RuntimeException("No tens permís per convidar");
         }
 
-        User receiver = userRepository.findByEmail(emailToInvite)
-                .orElseThrow(() -> new RuntimeException("L'usuari amb email " + emailToInvite + " no existeix"));
-
-        if (emailToInvite.equals(ownerEmail)) {
-            throw new RuntimeException("No et pots convidar a tu mateix");
+        boolean alreadyMember = project.getMembers().stream()
+                .anyMatch(u -> u.getEmail().equals(emailToInvite));
+        if (alreadyMember) {
+            throw new RuntimeException("Aquest usuari JA forma part del projecte!");
         }
 
         if (invitationRepository.findByReceiverEmailAndProjectId(emailToInvite, projectId).isPresent()) {
             throw new RuntimeException("Ja hi ha una invitació pendent per a aquest usuari");
         }
+
+        User receiver = userRepository.findByEmail(emailToInvite)
+                .orElseThrow(() -> new RuntimeException("L'usuari no existeix"));
 
         ProjectInvitation invitation = ProjectInvitation.builder()
                 .receiverEmail(emailToInvite)

@@ -24,8 +24,13 @@ public class TaskService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Projecte no trobat"));
 
-        if (!project.getOwner().getEmail().equals(userEmail)) {
-            throw new RuntimeException("No autoritzat");
+        // PERMETRE MEMBRES TAMBÉ:
+        boolean isOwner = project.getOwner().getEmail().equals(userEmail);
+        boolean isMember = project.getMembers().stream()
+                .anyMatch(m -> m.getEmail().equals(userEmail));
+
+        if (!isOwner && !isMember) {
+            throw new RuntimeException("No tens permís per crear tasques en aquest projecte");
         }
 
         Task task = Task.builder()
@@ -46,25 +51,37 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
-    public TaskResponse updateTaskStatus(Long taskId, String newStatus, String userEmail) {
+    public TaskResponse updateTaskStatus(Long taskId, String status, String userEmail) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Tasca no trobada"));
 
-        if (!task.getProject().getOwner().getEmail().equals(userEmail)) {
-            throw new RuntimeException("No autoritzat");
+        Project project = task.getProject();
+
+        boolean isOwner = project.getOwner().getEmail().equals(userEmail);
+        boolean isMember = project.getMembers().stream()
+                .anyMatch(m -> m.getEmail().equals(userEmail));
+
+        if (!isOwner && !isMember) {
+            throw new RuntimeException("No tens permís per moure aquesta tasca");
         }
 
-        task.setStatus(TaskStatus.valueOf(newStatus.toUpperCase())); // Passem d'String a Enum
-        Task updatedTask = taskRepository.save(task);
-        return mapToResponse(updatedTask);
+        task.setStatus(cat.tecnocampus.backend.domain.TaskStatus.valueOf(status));
+        Task savedTask = taskRepository.save(task);
+        return mapToResponse(savedTask);
     }
 
     public void deleteTask(Long taskId, String userEmail) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Tasca no trobada"));
 
-        if (!task.getProject().getOwner().getEmail().equals(userEmail)) {
-            throw new RuntimeException("No autoritzat");
+        Project project = task.getProject();
+
+        boolean isOwner = project.getOwner().getEmail().equals(userEmail);
+        boolean isMember = project.getMembers().stream()
+                .anyMatch(m -> m.getEmail().equals(userEmail));
+
+        if (!isOwner && !isMember) {
+            throw new RuntimeException("No tens permís per esborrar aquesta tasca");
         }
 
         taskRepository.delete(task);
@@ -79,18 +96,24 @@ public class TaskService {
                 .createdAt(task.getCreatedAt() != null ? task.getCreatedAt().toString() : "")
                 .build();
     }
-    public TaskResponse updateTask(Long taskId, TaskRequest request, String userEmail) {
+    public TaskResponse updateTask(Long taskId, String title, String description, String userEmail) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Tasca no trobada"));
 
-        if (!task.getProject().getOwner().getEmail().equals(userEmail)) {
-            throw new RuntimeException("No autoritzat");
+        Project project = task.getProject();
+
+        boolean isOwner = project.getOwner().getEmail().equals(userEmail);
+        boolean isMember = project.getMembers().stream()
+                .anyMatch(m -> m.getEmail().equals(userEmail));
+
+        if (!isOwner && !isMember) {
+            throw new RuntimeException("No tens permís per editar aquesta tasca");
         }
 
-        task.setTitle(request.getTitle());
-        task.setDescription(request.getDescription());
+        task.setTitle(title);
+        task.setDescription(description);
 
-        Task updatedTask = taskRepository.save(task);
-        return mapToResponse(updatedTask);
+        Task savedTask = taskRepository.save(task);
+        return mapToResponse(savedTask);
     }
 }
