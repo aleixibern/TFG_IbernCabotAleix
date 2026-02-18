@@ -4,7 +4,7 @@ export const TaskStatus = {
     IN_PROGRESS: "IN_PROGRESS",
     IN_REVIEW: "IN_REVIEW",
     DONE: "DONE"
-} as const; 
+} as const;
 
 export type TaskStatus = typeof TaskStatus[keyof typeof TaskStatus];
 
@@ -14,4 +14,7 @@ export interface Task {
     description: string;
     status: TaskStatus;
     createdAt: string;
+    // Aquests són els camps que et donen error en vermell:
+    assigneeName?: string;
+    assigneeEmail?: string;
 }

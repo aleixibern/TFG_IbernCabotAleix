@@ -34,6 +34,14 @@ public class Project {
     @JoinColumn(name = "user_id", nullable = false)
     private User owner;
 
+    @ManyToMany
+    @JoinTable(
+            name = "project_members",
+            joinColumns = @JoinColumn(name = "project_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id")
+    )
+    private List<User> members = new java.util.ArrayList<>();
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 

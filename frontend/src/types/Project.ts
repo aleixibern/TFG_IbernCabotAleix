@@ -1,10 +1,8 @@
-import type { User } from "./User";
-
 export interface Project {
     id: number;
     title: string;
-    description?: string;
-    createdAt?: string;
-    owner?: User;
-
+    description: string;
+    // Aquests són els camps que et donen error en vermell:
+    username: string; 
+    email: string;
 }

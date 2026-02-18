@@ -9,9 +9,9 @@ import type { User } from '../types/User';
 import { type Task, TaskStatus } from '../types/Task';
 import { MainLayout } from '../layouts/MainLayout';
 import { CreateTaskModal } from '../components/CreateTaskModal';
-import { EditTaskModal } from '../components/EditTaskModal'; // <--- Import del modal d'edició
+import { EditTaskModal } from '../components/EditTaskModal';
+import { InviteMemberModal } from '../components/InviteMemberModal'; // <--- IMPORT IMPORTANT
 
-// Definim les columnes i colors
 const COLUMNS = [
     { id: TaskStatus.BACKLOG, title: "Backlog 💡", color: "default" },
     { id: TaskStatus.READY, title: "Ready 🔥", color: "secondary" },
@@ -24,19 +24,19 @@ export default function ProjectBoardPage() {
     const { id } = useParams(); 
     const navigate = useNavigate();
     
-    // Control del Modal de CREAR
+    // Gestió dels Modals
     const { isOpen: isCreateOpen, onOpen: onCreateOpen, onOpenChange: onCreateOpenChange } = useDisclosure();
-    
-    // Control del Modal d'EDITAR
     const { isOpen: isEditOpen, onOpen: onEditOpen, onOpenChange: onEditOpenChange } = useDisclosure();
-    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    const { isOpen: isInviteOpen, onOpen: onInviteOpen, onOpenChange: onInviteOpenChange } = useDisclosure(); // <--- ESTAT PEL BOTÓ
 
+    // Estats de dades
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [project, setProject] = useState<Project | null>(null);
     const [user, setUser] = useState<User | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // 1. Càrrega inicial de dades
+    // Càrrega inicial
     useEffect(() => {
         const fetchData = async () => {
             if (!id) return;
@@ -57,80 +57,52 @@ export default function ProjectBoardPage() {
                 setLoading(false);
             }
         };
-
         fetchData();
     }, [id, navigate]);
 
-    // 2. Gestió de canvis visuals (Local State)
-    const handleTaskCreated = (newTask: Task) => {
-        setTasks([...tasks, newTask]); 
-    };
-
-    const handleTaskUpdated = (updatedTask: Task) => {
-        setTasks(tasks.map(t => t.id === updatedTask.id ? updatedTask : t));
-    };
-
-    const handleTaskDeleted = (taskId: number) => {
-        setTasks(tasks.filter(t => t.id !== taskId));
-    };
-
-    const handleTaskClick = (task: Task) => {
-        setSelectedTask(task);
-        onEditOpen();
-    };
-
-    // 3. Lògica del Drag & Drop
+    // Lògica Drag & Drop
     const onDragEnd = async (result: DropResult) => {
         const { destination, source, draggableId } = result;
-
         if (!destination) return;
-        if (
-            destination.droppableId === source.droppableId &&
-            destination.index === source.index
-        ) {
-            return;
-        }
+        if (destination.droppableId === source.droppableId && destination.index === source.index) return;
 
         const movedTaskId = Number(draggableId);
-        const task = tasks.find(t => t.id === movedTaskId);
-        if (!task) return;
-
-        // Actualització Optimista
         const newStatus = destination.droppableId as TaskStatus;
-        const updatedTasks = tasks.map(t => 
-            t.id === movedTaskId ? { ...t, status: newStatus } : t
-        );
-        setTasks(updatedTasks);
+        
+        // Actualització optimista
+        setTasks(prev => prev.map(t => t.id === movedTaskId ? { ...t, status: newStatus } : t));
 
-        // Actualització al Backend
         try {
             await taskService.updateStatus(movedTaskId, newStatus);
         } catch (error) {
-            console.error("Error movent la tasca:", error);
-            alert("Error al guardar el moviment.");
-            // Si falla, podríem revertir l'estat aquí si volguéssim ser molt estrictes
+            console.error("Error movent tasca", error);
         }
     };
 
-    if (loading) {
-        return (
-            <div className="flex h-screen items-center justify-center bg-black text-white">
-                <Spinner size="lg" color="primary" />
-            </div>
-        );
-    }
+    if (loading) return <div className="flex h-screen items-center justify-center bg-black"><Spinner size="lg" /></div>;
 
     return (
         <MainLayout username={user?.username} email={user?.email}>
             <div className="flex flex-col h-full gap-6">
                 
-                {/* Capçalera del Projecte */}
-                <div className="flex justify-between items-center px-2">
+                {/* CAPÇALERA */}
+                <div className="flex justify-between items-center px-2 text-white">
                     <div>
-                        <h1 className="text-3xl font-bold text-white">{project?.title}</h1>
-                        <p className="text-default-500 text-sm">{project?.description}</p>
+                        <h1 className="text-3xl font-bold">{project?.title}</h1>
+                        <div className="flex gap-2 items-center text-default-500">
+                            <span>{project?.description}</span>
+                            {project?.username !== user?.username && (
+                                <Chip size="sm" variant="flat" color="warning">Owner: {project?.username}</Chip>
+                            )}
+                        </div>
                     </div>
                     <div className="flex gap-3">
+                        {/* --- AQUEST ÉS EL BOTÓ QUE ET FALTAVA --- */}
+                        <Button color="secondary" variant="flat" onPress={onInviteOpen}>
+                            👥 Convidar
+                        </Button>
+                        {/* ---------------------------------------- */}
+                        
                         <Button color="primary" variant="shadow" onPress={onCreateOpen}>
                             + Nova Tasca
                         </Button>
@@ -140,67 +112,40 @@ export default function ProjectBoardPage() {
                     </div>
                 </div>
 
-                {/* AREA DRAG & DROP */}
+                {/* TAULER KANBAN */}
                 <DragDropContext onDragEnd={onDragEnd}>
                     <div className="flex gap-4 overflow-x-auto pb-4 h-[calc(100vh-200px)]">
                         {COLUMNS.map((column) => (
                             <Droppable key={column.id} droppableId={column.id}>
                                 {(provided) => (
-                                    <div 
-                                        ref={provided.innerRef}
-                                        {...provided.droppableProps}
-                                        className="min-w-[280px] w-full bg-zinc-900/50 rounded-xl border border-white/5 flex flex-col"
-                                    >
-                                        {/* Títol Columna */}
-                                        <div className={`p-4 border-b border-white/5 flex justify-between items-center sticky top-0 bg-zinc-900/90 backdrop-blur-md z-10 rounded-t-xl`}>
+                                    <div ref={provided.innerRef} {...provided.droppableProps} className="min-w-[280px] w-full bg-zinc-900/50 rounded-xl border border-white/5 flex flex-col">
+                                        <div className="p-4 border-b border-white/5 flex justify-between items-center bg-zinc-900/90 rounded-t-xl">
                                             <h3 className="font-bold text-white">{column.title}</h3>
                                             <Chip size="sm" variant="flat" color={column.color as any}>
                                                 {tasks.filter(t => t.status === column.id).length}
                                             </Chip>
                                         </div>
-
-                                        {/* Llista de Tasques */}
-                                        <div className="p-3 flex flex-col gap-3 overflow-y-auto flex-grow min-h-[100px]">
-                                            {tasks
-                                                .filter(task => task.status === column.id)
-                                                .map((task, index) => (
-                                                    <Draggable key={task.id} draggableId={task.id.toString()} index={index}>
-                                                        {(provided, snapshot) => (
-                                                            <div
-                                                                ref={provided.innerRef}
-                                                                {...provided.draggableProps}
-                                                                {...provided.dragHandleProps}
-                                                                style={{ 
-                                                                    ...provided.draggableProps.style,
-                                                                    opacity: snapshot.isDragging ? 0.8 : 1 
-                                                                }}
-                                                                // --- CANVI CLAU 1: El click el posem aquí al div pare ---
-                                                                onClick={() => {
-                                                                    // Evitem que s'obri si estem arrossegant
-                                                                    if (!snapshot.isDragging) {
-                                                                        handleTaskClick(task);
-                                                                    }
-                                                                }}
-                                                            >
-                                                                <Card 
-                                                                    // --- CANVI CLAU 2: Hem tret "isPressable" i "onPress" ---
-                                                                    // Això permet que el Drag & Drop torni a funcionar
-                                                                    className="bg-zinc-800 border border-white/10 hover:border-primary/50 cursor-grab active:cursor-grabbing transition-colors"
-                                                                >
-                                                                    <CardHeader className="flex justify-between items-start pb-0">
-                                                                        <span className="font-semibold text-white text-sm line-clamp-2 text-left select-none">
-                                                                            {task.title}
-                                                                        </span>
-                                                                    </CardHeader>
-                                                                    <CardBody className="pt-2 text-default-400 text-xs text-left select-none">
-                                                                        <p className="line-clamp-3">{task.description}</p>
-                                                                    </CardBody>
-                                                                </Card>
-                                                            </div>
-                                                        )}
-                                                    </Draggable>
-                                                ))
-                                            }
+                                        <div className="p-3 flex flex-col gap-3 overflow-y-auto flex-grow">
+                                            {tasks.filter(t => t.status === column.id).map((task, index) => (
+                                                <Draggable key={task.id} draggableId={task.id.toString()} index={index}>
+                                                    {(provided) => (
+                                                        <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
+                                                             onClick={() => { setSelectedTask(task); onEditOpen(); }}>
+                                                            <Card className="bg-zinc-800 border border-white/10 hover:border-primary/50 cursor-grab">
+                                                                <CardHeader className="pb-0 text-white font-semibold text-sm">{task.title}</CardHeader>
+                                                                <CardBody className="pt-2 text-default-400 text-xs">
+                                                                    <p className="line-clamp-2">{task.description}</p>
+                                                                    {task.assigneeName && (
+                                                                        <Chip size="sm" variant="dot" color="primary" className="mt-2">
+                                                                            {task.assigneeName}
+                                                                        </Chip>
+                                                                    )}
+                                                                </CardBody>
+                                                            </Card>
+                                                        </div>
+                                                    )}
+                                                </Draggable>
+                                            ))}
                                             {provided.placeholder}
                                         </div>
                                     </div>
@@ -209,24 +154,28 @@ export default function ProjectBoardPage() {
                         ))}
                     </div>
                 </DragDropContext>
-
-                {/* MODAL 1: CREAR TASCA */}
+                
+                {/* MODALS */}
                 <CreateTaskModal 
                     isOpen={isCreateOpen} 
                     onOpenChange={onCreateOpenChange} 
                     projectId={id!} 
-                    onTaskCreated={handleTaskCreated}
+                    onTaskCreated={(t) => setTasks([...tasks, t])} 
                 />
-
-                {/* MODAL 2: EDITAR TASCA */}
+                
                 <EditTaskModal 
                     isOpen={isEditOpen} 
-                    onOpenChange={onEditOpenChange}
-                    task={selectedTask}
-                    onTaskUpdated={handleTaskUpdated}
-                    onTaskDeleted={handleTaskDeleted}
+                    onOpenChange={onEditOpenChange} 
+                    task={selectedTask} 
+                    onTaskUpdated={(ut) => setTasks(tasks.map(t => t.id === ut.id ? ut : t))} 
+                    onTaskDeleted={(tid) => setTasks(tasks.filter(t => t.id !== tid))} 
                 />
-
+                
+                <InviteMemberModal 
+                    isOpen={isInviteOpen} 
+                    onOpenChange={onInviteOpenChange} 
+                    projectId={id!} 
+                />
             </div>
         </MainLayout>
     );

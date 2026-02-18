@@ -1,5 +1,6 @@
 package cat.tecnocampus.backend.controller;
 
+import cat.tecnocampus.backend.dto.InvitationResponse;
 import cat.tecnocampus.backend.dto.ProjectRequest;
 import cat.tecnocampus.backend.dto.ProjectResponse;
 import cat.tecnocampus.backend.service.ProjectService;
@@ -8,9 +9,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
 import java.security.Principal;
+
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -30,9 +32,9 @@ public class ProjectController {
     @GetMapping
     public ResponseEntity<List<ProjectResponse>> getMyProjects() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String email = auth.getName();
+        String email = auth.getName(); // <--- Aquí ja tens l'email guardat!
 
-        return ResponseEntity.ok(projectService.getUserProjects(email));
+        return ResponseEntity.ok(projectService.getProjectsByUser(email));
     }
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProject(@PathVariable Long id, Principal principal) {
@@ -48,5 +50,27 @@ public class ProjectController {
     public ResponseEntity<ProjectResponse> getProject(@PathVariable Long id, Principal principal) {
         String email = principal.getName();
         return ResponseEntity.ok(projectService.getProjectById(id, email));
+    }
+    @PostMapping("/{id}/invite")
+    public ResponseEntity<Void> inviteMember(@PathVariable Long id, @RequestBody Map<String, String> body, Principal principal) {
+        projectService.sendInvitation(id, body.get("email"), principal.getName());
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/invitations")
+    public ResponseEntity<List<InvitationResponse>> getInvitations(Principal principal) {
+        return ResponseEntity.ok(projectService.getUserInvitations(principal.getName()));
+    }
+
+    @PostMapping("/invitations/{invitationId}/accept")
+    public ResponseEntity<Void> acceptInvitation(@PathVariable Long invitationId, Principal principal) {
+        projectService.acceptInvitation(invitationId, principal.getName());
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/invitations/{invitationId}")
+    public ResponseEntity<Void> declineInvitation(@PathVariable Long invitationId, Principal principal) {
+        projectService.declineInvitation(invitationId, principal.getName());
+        return ResponseEntity.ok().build();
     }
 }
