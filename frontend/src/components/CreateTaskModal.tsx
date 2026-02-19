@@ -1,78 +1,80 @@
 import { useState } from 'react';
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input, Textarea } from "@heroui/react";
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input, Textarea, Select, SelectItem } from "@heroui/react";
 import { taskService } from '../services/taskService';
-import type { Task } from '../types/Task';
 
-interface CreateTaskModalProps {
+interface Props {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
     projectId: string;
-    onTaskCreated: (newTask: Task) => void; // Funció per avisar al pare que hem acabat
+    onTaskCreated: (task: any) => void;
 }
 
-export const CreateTaskModal = ({ isOpen, onOpenChange, projectId, onTaskCreated }: CreateTaskModalProps) => {
+export const CreateTaskModal = ({ isOpen, onOpenChange, projectId, onTaskCreated }: Props) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [type, setType] = useState('TASK');
+    const [priority, setPriority] = useState('MEDIUM');
+    const [dueDate, setDueDate] = useState('');
+    const [assigneeEmail, setAssigneeEmail] = useState('');
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
 
-    const handleSubmit = async (onClose: () => void) => {
-        if (!title.trim()) return;
-        
+    const handleCreate = async (onClose: () => void) => {
+        if (!title) return;
         setLoading(true);
-        setError('');
-
         try {
-            // Cridem al servei per crear la tasca
-            const newTask = await taskService.createTask(projectId, title, description);
-            
-            // Avisem al tauler que hi ha una tasca nova
+            const newTask = await taskService.createTask(projectId, {
+                title,
+                description,
+                type,
+                priority,
+                dueDate: dueDate || undefined,
+                assigneeEmail: assigneeEmail || undefined
+            });
             onTaskCreated(newTask);
             
-            // Netejem i tanquem
-            setTitle('');
-            setDescription('');
+            // Netejar el formulari
+            setTitle(''); setDescription(''); setType('TASK'); setPriority('MEDIUM'); setDueDate(''); setAssigneeEmail('');
             onClose();
-        } catch (err) {
-            console.error(err);
-            setError('Error al crear la tasca.');
+        } catch (error) {
+            console.error("Error creant tasca", error);
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange} placement="top-center" backdrop="blur">
+        <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="blur" size="2xl">
             <ModalContent>
                 {(onClose) => (
                     <>
-                        <ModalHeader className="flex flex-col gap-1 text-white">Nova Tasca 📝</ModalHeader>
-                        <ModalBody>
-                            <Input
-                                autoFocus
-                                label="Títol de la tasca"
-                                placeholder="Ex: Dissenyar la base de dades"
-                                variant="bordered"
-                                value={title}
-                                onValueChange={setTitle}
-                                isRequired
-                            />
-                            <Textarea
-                                label="Descripció"
-                                placeholder="Detalls de la tasca..."
-                                variant="bordered"
-                                value={description}
-                                onValueChange={setDescription}
-                            />
-                            {error && <p className="text-danger text-small">{error}</p>}
+                        <ModalHeader>✨ Nova Tasca</ModalHeader>
+                        <ModalBody className="gap-4">
+                            <Input label="Títol" value={title} onValueChange={setTitle} isRequired variant="bordered" />
+                            <Textarea label="Descripció" value={description} onValueChange={setDescription} variant="bordered" />
+                            
+                            <div className="flex gap-4">
+                                <Select label="Tipus" selectedKeys={[type]} onChange={(e) => setType(e.target.value)} variant="bordered">
+                                    <SelectItem key="TASK">📝 Tasca</SelectItem>
+                                    <SelectItem key="FEATURE">🚀 Feature</SelectItem>
+                                    <SelectItem key="BUG">🐛 Bug</SelectItem>
+                                </Select>
+                                
+                                <Select label="Prioritat" selectedKeys={[priority]} onChange={(e) => setPriority(e.target.value)} variant="bordered">
+                                    <SelectItem key="LOW">🟢 Baixa</SelectItem>
+                                    <SelectItem key="MEDIUM">🟡 Mitjana</SelectItem>
+                                    <SelectItem key="HIGH">🟠 Alta</SelectItem>
+                                    <SelectItem key="URGENT">🔴 Urgent</SelectItem>
+                                </Select>
+                            </div>
+
+                            <div className="flex gap-4">
+                                <Input type="date" label="Data Límit" value={dueDate} onValueChange={setDueDate} variant="bordered" />
+                                <Input label="Assignar a (Email)" placeholder="usuari@exemple.com" value={assigneeEmail} onValueChange={setAssigneeEmail} variant="bordered" />
+                            </div>
                         </ModalBody>
                         <ModalFooter>
-                            <Button color="danger" variant="flat" onPress={onClose}>
-                                Cancel·lar
-                            </Button>
-                            <Button color="primary" onPress={() => handleSubmit(onClose)} isLoading={loading}>
-                                Crear Tasca
-                            </Button>
+                            <Button variant="flat" onPress={onClose}>Cancel·lar</Button>
+                            <Button color="primary" isLoading={loading} onPress={() => handleCreate(onClose)}>Crear Tasca</Button>
                         </ModalFooter>
                     </>
                 )}

@@ -14,7 +14,12 @@ export interface Task {
     description: string;
     status: TaskStatus;
     createdAt: string;
-    // Aquests són els camps que et donen error en vermell:
+    
+    type?: 'TASK' | 'FEATURE' | 'BUG';
+    priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+    dueDate?: string;
     assigneeName?: string;
     assigneeEmail?: string;
+    parentTaskId?: number;
+    subtasks?: Task[];
 }

@@ -1,33 +1,28 @@
 import api from '../api/axios';
-import { type Task, TaskStatus } from '../types/Task';
+import { type Task, type TaskStatus } from '../types/Task';
 
 export const taskService = {
-    getTasksByProject: async (projectId: string) => {
-        const response = await api.get<Task[]>(`/projects/${projectId}/tasks`);
+    getTasksByProject: async (projectId: string): Promise<Task[]> => {
+        const response = await api.get(`/projects/${projectId}/tasks`);
+        return response.data;
+    },
+    
+    createTask: async (projectId: string, taskData: any): Promise<Task> => {
+        const response = await api.post(`/projects/${projectId}/tasks`, taskData);
         return response.data;
     },
 
-    createTask: async (projectId: string, title: string, description: string) => {
-        const response = await api.post<Task>(`/projects/${projectId}/tasks`, {
-            title,
-            description
-        });
+    updateStatus: async (taskId: number, status: TaskStatus): Promise<Task> => {
+        const response = await api.put(`/tasks/${taskId}/status`, { status });
         return response.data;
     },
 
-    updateStatus: async (taskId: number, status: TaskStatus) => {
-        const response = await api.put<Task>(`/tasks/${taskId}/status`, { status });
-        return response.data;
-    },
-    updateTask: async (taskId: number, title: string, description: string) => {
-        const response = await api.put<Task>(`/tasks/${taskId}`, {
-            title,
-            description
-        });
+    updateTask: async (taskId: number, taskData: any): Promise<Task> => {
+        const response = await api.put(`/tasks/${taskId}`, taskData);
         return response.data;
     },
 
-    deleteTask: async (taskId: number) => {
+    deleteTask: async (taskId: number): Promise<void> => {
         await api.delete(`/tasks/${taskId}`);
     }
 };

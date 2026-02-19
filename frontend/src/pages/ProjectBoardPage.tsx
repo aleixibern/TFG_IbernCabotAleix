@@ -10,7 +10,7 @@ import { type Task, TaskStatus } from '../types/Task';
 import { MainLayout } from '../layouts/MainLayout';
 import { CreateTaskModal } from '../components/CreateTaskModal';
 import { EditTaskModal } from '../components/EditTaskModal';
-import { InviteMemberModal } from '../components/InviteMemberModal'; // <--- IMPORT IMPORTANT
+import { InviteMemberModal } from '../components/InviteMemberModal';
 
 const COLUMNS = [
     { id: TaskStatus.BACKLOG, title: "Backlog 💡", color: "default" },
@@ -20,6 +20,30 @@ const COLUMNS = [
     { id: TaskStatus.DONE, title: "Done ✅", color: "success" }
 ];
 
+const TYPE_STYLES = {
+    TASK: { icon: "📝", color: "primary", label: "Tasca" },
+    FEATURE: { icon: "🚀", color: "secondary", label: "Feature" },
+    BUG: { icon: "🐛", color: "danger", label: "Bug" }
+};
+
+const PRIORITY_STYLES = {
+    LOW: { icon: "🟢", color: "success" },
+    MEDIUM: { icon: "🟡", color: "warning" },
+    HIGH: { icon: "🟠", color: "warning" },
+    URGENT: { icon: "🔴", color: "danger" }
+};
+
+// --- FUNCIÓ PER TREURE LES INICIALS ---
+const getInitials = (name?: string) => {
+    if (!name) return "?";
+    const words = name.trim().split(/\s+/);
+    if (words.length >= 2) {
+        return (words[0][0] + words[1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase(); // Si només hi ha un nom, agafa les 2 primeres lletres
+};
+// --------------------------------------
+
 export default function ProjectBoardPage() {
     const { id } = useParams(); 
     const navigate = useNavigate();
@@ -27,7 +51,7 @@ export default function ProjectBoardPage() {
     // Gestió dels Modals
     const { isOpen: isCreateOpen, onOpen: onCreateOpen, onOpenChange: onCreateOpenChange } = useDisclosure();
     const { isOpen: isEditOpen, onOpen: onEditOpen, onOpenChange: onEditOpenChange } = useDisclosure();
-    const { isOpen: isInviteOpen, onOpen: onInviteOpen, onOpenChange: onInviteOpenChange } = useDisclosure(); // <--- ESTAT PEL BOTÓ
+    const { isOpen: isInviteOpen, onOpen: onInviteOpen, onOpenChange: onInviteOpenChange } = useDisclosure();
 
     // Estats de dades
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -69,7 +93,6 @@ export default function ProjectBoardPage() {
         const movedTaskId = Number(draggableId);
         const newStatus = destination.droppableId as TaskStatus;
         
-        // Actualització optimista
         setTasks(prev => prev.map(t => t.id === movedTaskId ? { ...t, status: newStatus } : t));
 
         try {
@@ -97,12 +120,9 @@ export default function ProjectBoardPage() {
                         </div>
                     </div>
                     <div className="flex gap-3">
-                        {/* --- AQUEST ÉS EL BOTÓ QUE ET FALTAVA --- */}
                         <Button color="secondary" variant="flat" onPress={onInviteOpen}>
                             👥 Convidar
                         </Button>
-                        {/* ---------------------------------------- */}
-                        
                         <Button color="primary" variant="shadow" onPress={onCreateOpen}>
                             + Nova Tasca
                         </Button>
@@ -126,26 +146,56 @@ export default function ProjectBoardPage() {
                                             </Chip>
                                         </div>
                                         <div className="p-3 flex flex-col gap-3 overflow-y-auto flex-grow">
-                                            {tasks.filter(t => t.status === column.id).map((task, index) => (
-                                                <Draggable key={task.id} draggableId={task.id.toString()} index={index}>
-                                                    {(provided) => (
-                                                        <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
-                                                             onClick={() => { setSelectedTask(task); onEditOpen(); }}>
-                                                            <Card className="bg-zinc-800 border border-white/10 hover:border-primary/50 cursor-grab">
-                                                                <CardHeader className="pb-0 text-white font-semibold text-sm">{task.title}</CardHeader>
-                                                                <CardBody className="pt-2 text-default-400 text-xs">
-                                                                    <p className="line-clamp-2">{task.description}</p>
-                                                                    {task.assigneeName && (
-                                                                        <Chip size="sm" variant="dot" color="primary" className="mt-2">
-                                                                            {task.assigneeName}
-                                                                        </Chip>
-                                                                    )}
-                                                                </CardBody>
-                                                            </Card>
-                                                        </div>
-                                                    )}
-                                                </Draggable>
-                                            ))}
+                                            {tasks.filter(t => t.status === column.id && !t.parentTaskId).map((task, index) => {
+                                                const taskType = task.type || 'TASK';
+                                                const taskPriority = task.priority || 'MEDIUM';
+                                                const typeStyle = TYPE_STYLES[taskType as keyof typeof TYPE_STYLES];
+                                                const priorityStyle = PRIORITY_STYLES[taskPriority as keyof typeof PRIORITY_STYLES];
+
+                                                return (
+                                                    <Draggable key={task.id} draggableId={task.id.toString()} index={index}>
+                                                        {(provided) => (
+                                                            <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
+                                                                 onClick={() => { setSelectedTask(task); onEditOpen(); }}>
+                                                                
+                                                                <Card className="bg-zinc-800 border border-white/10 hover:border-primary/50 cursor-grab">
+                                                                    <CardHeader className="pb-0 text-white font-semibold text-sm">
+                                                                        {task.title}
+                                                                    </CardHeader>
+                                                                    
+                                                                    <CardBody className="pt-3 pb-3 text-xs">
+                                                                        {/* CAIXA INFERIOR: Tot a la mateixa línia (justify-between els separa als extrems) */}
+                                                                        <div className="flex justify-between items-center w-full mt-2">
+                                                                            
+                                                                            {/* Esquerra: Tipus i Prioritat */}
+                                                                            <div className="flex flex-wrap gap-1">
+                                                                                <Chip size="sm" variant="flat" color={typeStyle?.color as any || "default"}>
+                                                                                    {typeStyle?.icon} {typeStyle?.label}
+                                                                                </Chip>
+                                                                                <Chip size="sm" variant="flat" color={priorityStyle?.color as any || "default"}>
+                                                                                    {priorityStyle?.icon}
+                                                                                </Chip>
+                                                                            </div>
+                                                                            
+                                                                            {/* Dreta: Avatar (Assignat) */}
+                                                                            {task.assigneeName && (
+                                                                                <div 
+                                                                                    title={task.assigneeName} 
+                                                                                    className="w-7 h-7 rounded-full bg-primary/20 border border-primary text-primary flex items-center justify-center text-[11px] font-bold shadow-sm shrink-0 ml-2"
+                                                                                >
+                                                                                    {getInitials(task.assigneeName)}
+                                                                                </div>
+                                                                            )}
+                                                                            
+                                                                        </div>
+                                                                    </CardBody>
+                                                                </Card>
+
+                                                            </div>
+                                                        )}
+                                                    </Draggable>
+                                                )
+                                            })}
                                             {provided.placeholder}
                                         </div>
                                     </div>
@@ -166,7 +216,8 @@ export default function ProjectBoardPage() {
                 <EditTaskModal 
                     isOpen={isEditOpen} 
                     onOpenChange={onEditOpenChange} 
-                    task={selectedTask} 
+                    task={selectedTask}
+                    projectId={id!} 
                     onTaskUpdated={(ut) => setTasks(tasks.map(t => t.id === ut.id ? ut : t))} 
                     onTaskDeleted={(tid) => setTasks(tasks.filter(t => t.id !== tid))} 
                 />

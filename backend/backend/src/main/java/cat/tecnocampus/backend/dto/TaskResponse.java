@@ -1,18 +1,25 @@
 package cat.tecnocampus.backend.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 public class TaskResponse {
     private Long id;
     private String title;
     private String description;
     private String status;
     private String createdAt;
+
+    private String type;
+    private String priority;
+    private LocalDate dueDate;
+    private String assigneeName;
+    private String assigneeEmail;
+    private Long parentTaskId;
+    private List<TaskResponse> subtasks;
 }

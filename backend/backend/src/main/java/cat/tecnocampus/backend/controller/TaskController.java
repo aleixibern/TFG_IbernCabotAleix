@@ -18,7 +18,6 @@ public class TaskController {
 
     private final TaskService taskService;
 
-    // Aquests dos estan bé perquè tenen la ruta completa
     @GetMapping("/projects/{projectId}/tasks")
     public ResponseEntity<List<TaskResponse>> getProjectTasks(@PathVariable Long projectId, Principal principal) {
         return ResponseEntity.ok(taskService.getTasksByProject(projectId, principal.getName()));
@@ -29,19 +28,18 @@ public class TaskController {
         return ResponseEntity.ok(taskService.createTask(projectId, request, principal.getName()));
     }
 
-    // --- CORRECCIÓ AQUÍ BAIX: AFEGIR "/tasks" ---
 
-    @PutMapping("/tasks/{id}/status") // <--- ABANS: "/{id}/status"
+    @PutMapping("/tasks/{id}/status")
     public ResponseEntity<TaskResponse> updateTaskStatus(@PathVariable Long id, @RequestBody Map<String, String> body, Principal principal) {
         return ResponseEntity.ok(taskService.updateTaskStatus(id, body.get("status"), principal.getName()));
     }
 
-    @PutMapping("/tasks/{id}") // <--- ABANS: "/{id}"
+    @PutMapping("/tasks/{id}")
     public ResponseEntity<TaskResponse> updateTask(@PathVariable Long id, @RequestBody TaskRequest request, Principal principal) {
-        return ResponseEntity.ok(taskService.updateTask(id, request.getTitle(), request.getDescription(), principal.getName()));
+        return ResponseEntity.ok(taskService.updateTask(id, request, principal.getName()));
     }
 
-    @DeleteMapping("/tasks/{id}") // <--- ABANS: "/{id}"
+    @DeleteMapping("/tasks/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable Long id, Principal principal) {
         taskService.deleteTask(id, principal.getName());
         return ResponseEntity.noContent().build();
