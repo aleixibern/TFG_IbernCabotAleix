@@ -1,81 +1,62 @@
-import { Card, CardHeader, CardBody, CardFooter, Divider, Image, Button } from "@heroui/react";
-import { useNavigate } from "react-router-dom"; 
+import { Card, CardHeader, CardBody, CardFooter, Button, Divider, Chip } from "@heroui/react";
+import { useNavigate } from "react-router-dom";
 import type { Project } from "../types/Project";
-import api from "../api/axios";
 
-interface ProjectCardProps {
-  project: Project;
-  onDelete: (id: number) => void;
+interface Props {
+    project: Project;
+    // Afegim la funció que el Dashboard ens passarà per esborrar
+    onDelete: (projectId: number) => void;
 }
 
-export const ProjectCard = ({ project, onDelete }: ProjectCardProps) => {
-  const navigate = useNavigate(); 
+// Rebem 'onDelete' aquí a les props
+export const ProjectCard = ({ project, onDelete }: Props) => {
+    const navigate = useNavigate();
 
-  const handleDelete = async () => {
-    if (!window.confirm(`Estàs segur que vols esborrar el projecte "${project.title}"?`)) {
-      return;
-    }
+    const handleDeleteClick = () => {
+        // Confirmació senzilla abans d'esborrar
+        if (window.confirm(`Estàs segur que vols esborrar el projecte "${project.title}"? Aquesta acció no es pot desfer.`)) {
+            onDelete(project.id);
+        }
+    };
 
-    try {
-      await api.delete(`/projects/${project.id}`);
-      onDelete(project.id); 
-    } catch (error) {
-      console.error("Error esborrant projecte:", error);
-      alert("No s'ha pogut esborrar. Potser no ets el propietari?");
-    }
-  };
-
-  return (
-    <Card className="max-w-[400px] bg-zinc-900 border border-white/10">
-      <CardHeader className="flex gap-3">
-        <Image
-          alt="Project Icon"
-          height={40}
-          radius="sm"
-          src="https://avatars.githubusercontent.com/u/86160567?s=200&v=4"
-          width={40}
-        />
-        <div className="flex flex-col">
-          <p className="text-md font-bold text-white">{project.title}</p>
-          <p className="text-small text-default-500">
-            Owner: {project.owner?.username || "Desconegut"}
-          </p>
-        </div>
-      </CardHeader>
-      
-      <Divider className="bg-white/10"/>
-      
-      <CardBody>
-        <p className="text-gray-300 line-clamp-3">
-          {project.description || "Sense descripció disponible."}
-        </p>
-      </CardBody>
-      
-      <Divider className="bg-white/10"/>
-      
-      <CardFooter className="flex justify-between items-center">
-        
-        <Button 
-            color="primary" 
-            variant="light" 
-            onPress={() => navigate(`/project/${project.id}`)}
-        >
-          Veure Detalls
-        </Button>
-        
-        
-        <Button 
-            isIconOnly 
-            color="danger" 
-            variant="light" 
-            aria-label="Esborrar projecte"
-            onPress={handleDelete}
-        >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-            </svg>
-        </Button>
-      </CardFooter>
-    </Card>
-  );
+    return (
+        <Card className="max-w-[400px] bg-zinc-900 border border-white/10 font-sans">
+            <CardHeader className="flex gap-3 justify-between">
+                <div className="flex flex-col">
+                    <p className="text-md font-bold text-white">{project.title}</p>
+                    {/* Mantenim el <div> per evitar l'error d'hidratació */}
+                    <div className="text-small text-default-500 flex items-center gap-1 mt-1">
+                        Owner: <Chip size="sm" variant="dot" color="primary">{project.username || "Sense nom"}</Chip>
+                    </div>
+                </div>
+            </CardHeader>
+            <Divider className="bg-white/10"/>
+            <CardBody>
+                {/* 'line-clamp-3' talla el text si és molt llarg i posa '...' */}
+                <p className="text-sm text-default-400 line-clamp-3">{project.description}</p>
+            </CardBody>
+            <Divider className="bg-white/10"/>
+            
+            {/* FOOTER AMB DOS BOTONS */}
+            <CardFooter className="flex gap-2 justify-between">
+                <Button 
+                    color="danger" 
+                    variant="light" 
+                    isIconOnly // Fem que sigui només la icona per estalviar espai i que quedi més net
+                    onPress={handleDeleteClick}
+                    title="Esborrar Projecte"
+                >
+                    🗑️
+                </Button>
+                <Button 
+                    color="primary" 
+                    variant="flat" 
+                    className="flex-1" // 'flex-1' fa que aquest botó ocupi tot l'espai sobrant
+                    onClick={() => navigate(`/projects/${project.id}`)}
+                >
+                    Veure Detalls
+                </Button>
+            </CardFooter>
+        </Card>
+    );
 };

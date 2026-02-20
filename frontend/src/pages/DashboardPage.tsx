@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Spinner, Card, CardBody, CardFooter } from "@heroui/react";
+import { Button, Spinner } from "@heroui/react";
 import api from '../api/axios';
 import { projectService, type Invitation } from '../services/projectService';
 import { ProjectCard } from '../components/ProjectCard';
@@ -47,6 +47,19 @@ export default function DashboardPage() {
         setInvitations(invitations.filter(i => i.id !== id));
     };
 
+    // --- NOVA FUNCIÓ PER ESBORRAR DE VERITAT ---
+    const handleDeleteProject = async (projectId: number) => {
+        try {
+            await projectService.deleteProject(projectId);
+            // Si funciona, l'esborrem de la pantalla a l'instant
+            setProjects(projects.filter(p => p.id !== projectId));
+        } catch (error) {
+            console.error("Error esborrant projecte", error);
+            alert("No s'ha pogut esborrar el projecte.");
+        }
+    };
+    // ---------------------------------------------
+
     if (loading) return <div className="flex h-screen items-center justify-center bg-black"><Spinner /></div>;
 
     return (
@@ -76,14 +89,14 @@ export default function DashboardPage() {
                     <Button color="primary" onPress={() => setIsModalOpen(true)}>+ Nou Projecte</Button>
                 </div>
 
+                {/* CORRECCIÓ: Hem tret el div amb l'onClick que trencava l'esborrat */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {projects.map((project) => (
-                        <div key={project.id} onClick={() => navigate(`/projects/${project.id}`)}>
-                            <ProjectCard 
-                                project={project} 
-                                onDelete={() => fetchData()} 
-                            />
-                        </div>
+                        <ProjectCard 
+                            key={project.id} 
+                            project={project} 
+                            onDelete={handleDeleteProject} // Li passem la funció correcta!
+                        />
                     ))}
                 </div>
 

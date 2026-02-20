@@ -25,6 +25,9 @@ export const projectService = {
     acceptInvitation: async (invitationId: number) => {
         await api.post(`/projects/invitations/${invitationId}/accept`);
     },
+    deleteProject: async (projectId: number): Promise<void> => {
+        await api.delete(`/projects/${projectId}`);
+    },
 
     declineInvitation: async (invitationId: number) => {
         await api.delete(`/projects/invitations/${invitationId}`);

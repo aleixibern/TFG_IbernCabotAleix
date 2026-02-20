@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-// IMPORT CORREGIT: Hem afegit 'Chip' aquí
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input, Textarea, Select, SelectItem, Divider, Checkbox, Chip } from "@heroui/react";
 import { taskService } from '../services/taskService';
+import { commentService } from '../services/commentService';
 import type { Task } from '../types/Task';
+import type { Comment } from '../types/Comment';
 
 interface Props {
     isOpen: boolean;
@@ -13,6 +14,13 @@ interface Props {
     onTaskDeleted: (taskId: number) => void;
 }
 
+const getInitials = (name?: string) => {
+    if (!name) return "?";
+    const words = name.trim().split(/\s+/);
+    if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+};
+
 export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpdated, onTaskDeleted }: Props) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -22,9 +30,15 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
     const [assigneeEmail, setAssigneeEmail] = useState('');
     const [loading, setLoading] = useState(false);
 
+    // Estats Subtasques
     const [subtasks, setSubtasks] = useState<Task[]>([]);
     const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
     const [loadingSubtask, setLoadingSubtask] = useState(false);
+
+    // --- ESTATS COMENTARIS ---
+    const [comments, setComments] = useState<Comment[]>([]);
+    const [newCommentText, setNewCommentText] = useState('');
+    const [loadingComment, setLoadingComment] = useState(false);
 
     useEffect(() => {
         if (task) {
@@ -35,8 +49,20 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
             setDueDate(task.dueDate || '');
             setAssigneeEmail(task.assigneeEmail || '');
             setSubtasks(task.subtasks || []);
+            
+            // Carregar els comentaris d'aquesta tasca
+            loadComments(task.id);
         }
     }, [task]);
+
+    const loadComments = async (taskId: number) => {
+        try {
+            const data = await commentService.getCommentsByTask(taskId);
+            setComments(data);
+        } catch (error) {
+            console.error("Error carregant comentaris", error);
+        }
+    };
 
     const handleUpdate = async (onClose: () => void) => {
         if (!task || !title) return;
@@ -57,7 +83,7 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
 
     const handleDelete = async (onClose: () => void) => {
         if (!task) return;
-        if (confirm("Segur que vols esborrar aquesta tasca? (S'esborraran també les subtasques)")) {
+        if (confirm("Segur que vols esborrar aquesta tasca? (S'esborraran també les subtasques i comentaris)")) {
             setLoading(true);
             try {
                 await taskService.deleteTask(task.id);
@@ -75,14 +101,9 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
         if (!newSubtaskTitle.trim() || !task) return;
         setLoadingSubtask(true);
         try {
-            const newSub = await taskService.createTask(projectId, {
-                title: newSubtaskTitle,
-                parentTaskId: task.id,
-                type: 'TASK'
-            });
+            const newSub = await taskService.createTask(projectId, { title: newSubtaskTitle, parentTaskId: task.id, type: 'TASK' });
             const updatedList = [...subtasks, newSub];
             setSubtasks(updatedList);
-            // CORRECCIÓ TYPESCRIPT: Afegit 'as Task'
             onTaskUpdated({ ...task, subtasks: updatedList } as Task);
             setNewSubtaskTitle('');
         } catch (error) {
@@ -99,10 +120,9 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
             const updatedSub = await taskService.updateStatus(subtaskId, newStatus as any);
             const updatedList = subtasks.map(st => st.id === subtaskId ? updatedSub : st);
             setSubtasks(updatedList);
-            // CORRECCIÓ TYPESCRIPT: Afegit 'as Task'
             onTaskUpdated({ ...task, subtasks: updatedList } as Task);
         } catch (error) {
-            console.error("Error canviant estat de la subtasca", error);
+            console.error("Error canviant estat", error);
         }
     };
 
@@ -113,7 +133,6 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
                 await taskService.deleteTask(subtaskId);
                 const updatedList = subtasks.filter(st => st.id !== subtaskId);
                 setSubtasks(updatedList);
-                // CORRECCIÓ TYPESCRIPT: Afegit 'as Task'
                 onTaskUpdated({ ...task, subtasks: updatedList } as Task);
             } catch (error) {
                 console.error("Error esborrant subtasca", error);
@@ -121,10 +140,25 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
         }
     };
 
+    // --- LÒGICA AFEGIR COMENTARI ---
+    const handleAddComment = async () => {
+        if (!newCommentText.trim() || !task) return;
+        setLoadingComment(true);
+        try {
+            const newComment = await commentService.addComment(task.id, newCommentText);
+            setComments([...comments, newComment]);
+            setNewCommentText('');
+        } catch (error) {
+            console.error("Error enviant comentari", error);
+        } finally {
+            setLoadingComment(false);
+        }
+    };
+
     if (!task) return null;
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="blur" size="2xl">
+        <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="blur" size="2xl" scrollBehavior="inside">
             <ModalContent>
                 {(onClose) => (
                     <>
@@ -134,7 +168,6 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
                             <Textarea label="Descripció" value={description} onValueChange={setDescription} variant="bordered" />
                             
                             <div className="flex gap-4">
-                                {/* CORRECCIÓ: Hem tret els value="..." */}
                                 <Select label="Tipus" selectedKeys={[type]} onChange={(e) => setType(e.target.value)} variant="bordered">
                                     <SelectItem key="TASK">📝 Tasca</SelectItem>
                                     <SelectItem key="FEATURE">🚀 Feature</SelectItem>
@@ -155,50 +188,77 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
 
                             <Divider className="my-1" />
                             
+                            {/* SUBTASQUES */}
                             <div className="flex flex-col gap-2">
                                 <h4 className="text-sm font-semibold text-white flex items-center gap-2">
                                     🗂️ Subtasques <Chip size="sm" variant="flat">{subtasks.length}</Chip>
                                 </h4>
-                                
                                 {subtasks.length > 0 && (
-                                    <div className="flex flex-col gap-2 mb-2 max-h-40 overflow-y-auto pr-1">
+                                    <div className="flex flex-col gap-2 mb-2">
                                         {subtasks.map((st) => (
-                                            <div key={st.id} className="flex justify-between items-center bg-zinc-900/50 p-2 rounded-lg border border-white/5 hover:border-white/20 transition-all">
+                                            <div key={st.id} className="flex justify-between items-center bg-zinc-900/50 p-2 rounded-lg border border-white/5 hover:border-white/20">
                                                 <div className="flex items-center gap-3">
-                                                    <Checkbox 
-                                                        isSelected={st.status === 'DONE'} 
-                                                        onValueChange={() => handleToggleSubtask(st.id, st.status)}
-                                                        color="success" 
-                                                        size="sm"
-                                                    />
-                                                    <span className={`text-sm ${st.status === 'DONE' ? 'line-through text-default-500' : 'text-white'}`}>
-                                                        {st.title}
-                                                    </span>
+                                                    <Checkbox isSelected={st.status === 'DONE'} onValueChange={() => handleToggleSubtask(st.id, st.status)} color="success" size="sm" />
+                                                    <span className={`text-sm ${st.status === 'DONE' ? 'line-through text-default-500' : 'text-white'}`}>{st.title}</span>
                                                 </div>
-                                                <Button isIconOnly size="sm" variant="light" color="danger" onPress={() => handleDeleteSubtask(st.id)}>
-                                                    ✕
-                                                </Button>
+                                                <Button isIconOnly size="sm" variant="light" color="danger" onPress={() => handleDeleteSubtask(st.id)}>✕</Button>
                                             </div>
                                         ))}
                                     </div>
                                 )}
-
                                 <div className="flex gap-2">
-                                    <Input 
-                                        size="sm" 
-                                        placeholder="Escriu una nova subtasca i prem Enter..." 
-                                        value={newSubtaskTitle} 
-                                        onValueChange={setNewSubtaskTitle}
+                                    <Input size="sm" placeholder="Nova subtasca..." value={newSubtaskTitle} onValueChange={setNewSubtaskTitle} variant="bordered" onKeyDown={(e) => e.key === 'Enter' && handleAddSubtask()} />
+                                    <Button size="sm" color="secondary" variant="flat" onPress={handleAddSubtask} isLoading={loadingSubtask}>Afegir</Button>
+                                </div>
+                            </div>
+
+                            <Divider className="my-1" />
+
+                            {/* --- XAT DE COMENTARIS --- */}
+                            <div className="flex flex-col gap-3">
+                                <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+                                    💬 Comentaris <Chip size="sm" variant="flat">{comments.length}</Chip>
+                                </h4>
+                                
+                                <div className="flex flex-col gap-3 max-h-48 overflow-y-auto pr-2">
+                                    {comments.length === 0 ? (
+                                        <p className="text-xs text-default-500 text-center py-4">Cap comentari encara. Trenca el gel!</p>
+                                    ) : (
+                                        comments.map(comment => (
+                                            <div key={comment.id} className="flex gap-3 items-start">
+                                                <div title={comment.authorName} className="w-8 h-8 rounded-full bg-primary/20 border border-primary flex items-center justify-center text-xs font-bold text-primary shrink-0 mt-1">
+                                                    {getInitials(comment.authorName)}
+                                                </div>
+                                                <div className="bg-zinc-800/80 rounded-xl rounded-tl-none p-3 border border-white/5 text-sm text-white w-full">
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <span className="font-bold text-xs text-primary">{comment.authorName}</span>
+                                                    </div>
+                                                    <p className="whitespace-pre-wrap">{comment.text}</p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+
+                                <div className="flex gap-2 items-end mt-2">
+                                    <Textarea 
+                                        minRows={1} 
+                                        maxRows={3} 
+                                        placeholder="Escriu un comentari..." 
+                                        value={newCommentText} 
+                                        onValueChange={setNewCommentText}
                                         variant="bordered"
-                                        onKeyDown={(e) => e.key === 'Enter' && handleAddSubtask()}
+                                        className="flex-1"
                                     />
-                                    <Button size="sm" color="secondary" variant="flat" onPress={handleAddSubtask} isLoading={loadingSubtask}>
-                                        Afegir
+                                    <Button color="primary" onPress={handleAddComment} isLoading={loadingComment} className="mb-1">
+                                        Enviar
                                     </Button>
                                 </div>
                             </div>
+                            {/* ------------------------- */}
+
                         </ModalBody>
-                        <ModalFooter className="flex justify-between">
+                        <ModalFooter className="flex justify-between border-t border-white/10 pt-4 mt-2">
                             <Button color="danger" variant="flat" onPress={() => handleDelete(onClose)}>🗑️ Esborrar Tasca</Button>
                             <div className="flex gap-2">
                                 <Button variant="flat" onPress={onClose}>Cancel·lar</Button>

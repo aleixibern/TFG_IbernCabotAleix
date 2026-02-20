@@ -64,13 +64,12 @@ public class ProjectService {
                 .id(project.getId())
                 .title(project.getTitle())
                 .description(project.getDescription())
-                // .status(project.getStatus().name())
                 .createdAt(project.getCreatedAt() != null ? project.getCreatedAt().toString() : "")
-                .username(project.getOwner().getUsername())
-                .email(project.getOwner().getEmail())
-                .members(project.getMembers().stream()
-                        .map(user -> user.getEmail())
-                        .collect(Collectors.toList()))
+                .username(project.getOwner() != null ? project.getOwner().getUsername() : "Sense nom")
+                .email(project.getOwner() != null ? project.getOwner().getEmail() : "")
+                .members(project.getMembers() != null ?
+                        project.getMembers().stream().map(user -> user.getEmail()).collect(java.util.stream.Collectors.toList())
+                        : new java.util.ArrayList<>())
                 .build();
     }
     public ProjectResponse getProjectById(Long id, String email) {
