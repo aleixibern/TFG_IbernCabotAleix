@@ -61,6 +61,9 @@ public class Task {
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
 
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> comments;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

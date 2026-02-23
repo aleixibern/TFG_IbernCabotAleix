@@ -30,6 +30,9 @@ public class Project {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "subject")
+    private String subject;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User owner;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Spinner, Button, Card, CardHeader, CardBody, Chip, useDisclosure } from "@heroui/react";
+import { Spinner, Button, Card, CardHeader, CardBody, Chip, useDisclosure, Select, SelectItem } from "@heroui/react";
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import api from '../api/axios';
 import { taskService } from '../services/taskService';
@@ -33,34 +33,32 @@ const PRIORITY_STYLES = {
     URGENT: { icon: "🔴", color: "danger" }
 };
 
-// --- FUNCIÓ PER TREURE LES INICIALS ---
 const getInitials = (name?: string) => {
     if (!name) return "?";
     const words = name.trim().split(/\s+/);
     if (words.length >= 2) {
         return (words[0][0] + words[1][0]).toUpperCase();
     }
-    return name.slice(0, 2).toUpperCase(); // Si només hi ha un nom, agafa les 2 primeres lletres
+    return name.slice(0, 2).toUpperCase();
 };
-// --------------------------------------
 
 export default function ProjectBoardPage() {
     const { id } = useParams(); 
     const navigate = useNavigate();
     
-    // Gestió dels Modals
     const { isOpen: isCreateOpen, onOpen: onCreateOpen, onOpenChange: onCreateOpenChange } = useDisclosure();
     const { isOpen: isEditOpen, onOpen: onEditOpen, onOpenChange: onEditOpenChange } = useDisclosure();
     const { isOpen: isInviteOpen, onOpen: onInviteOpen, onOpenChange: onInviteOpenChange } = useDisclosure();
 
-    // Estats de dades
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [project, setProject] = useState<Project | null>(null);
     const [user, setUser] = useState<User | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Càrrega inicial
+    const [filterType, setFilterType] = useState<string>("ALL");
+    const [filterAssignee, setFilterAssignee] = useState<string>("ALL");
+
     useEffect(() => {
         const fetchData = async () => {
             if (!id) return;
@@ -84,7 +82,6 @@ export default function ProjectBoardPage() {
         fetchData();
     }, [id, navigate]);
 
-    // Lògica Drag & Drop
     const onDragEnd = async (result: DropResult) => {
         const { destination, source, draggableId } = result;
         if (!destination) return;
@@ -102,6 +99,14 @@ export default function ProjectBoardPage() {
         }
     };
 
+    const uniqueAssignees = Array.from(new Set(tasks.filter(t => t.assigneeEmail).map(t => t.assigneeEmail)));
+
+    const filteredTasks = tasks.filter(task => {
+        const matchType = filterType === "ALL" || task.type === filterType;
+        const matchAssignee = filterAssignee === "ALL" || task.assigneeEmail === filterAssignee;
+        return matchType && matchAssignee;
+    });
+
     if (loading) return <div className="flex h-screen items-center justify-center bg-black"><Spinner size="lg" /></div>;
 
     return (
@@ -114,8 +119,9 @@ export default function ProjectBoardPage() {
                         <h1 className="text-3xl font-bold">{project?.title}</h1>
                         <div className="flex gap-2 items-center text-default-500">
                             <span>{project?.description}</span>
-                            {project?.username !== user?.username && (
-                                <Chip size="sm" variant="flat" color="warning">Owner: {project?.username}</Chip>
+                            {/* --- CANVI AQUÍ: Hem posat l'Assignatura (Subject) --- */}
+                            {project?.subject && (
+                                <Chip size="sm" variant="flat" color="secondary">📚 {project.subject}</Chip>
                             )}
                         </div>
                     </div>
@@ -132,9 +138,49 @@ export default function ProjectBoardPage() {
                     </div>
                 </div>
 
+                {/* --- BARRA DE FILTRES --- */}
+                <div className="flex gap-4 items-center bg-zinc-900/50 p-4 rounded-xl border border-white/10">
+                    <span className="text-white font-bold text-sm">🔍 Filtres:</span>
+                    
+                    <Select 
+                        label="Tipus de Tasca" 
+                        selectedKeys={[filterType]} 
+                        onChange={(e) => setFilterType(e.target.value)} 
+                        size="sm" 
+                        className="w-48"
+                        variant="bordered"
+                    >
+                        <SelectItem key="ALL">Tots</SelectItem>
+                        <SelectItem key="TASK">📝 Tasca</SelectItem>
+                        <SelectItem key="FEATURE">🚀 Feature</SelectItem>
+                        <SelectItem key="BUG">🐛 Bug</SelectItem>
+                    </Select>
+
+                    <Select 
+                        label="Assignat a" 
+                        selectedKeys={[filterAssignee]} 
+                        onChange={(e) => setFilterAssignee(e.target.value)} 
+                        size="sm" 
+                        className="w-48"
+                        variant="bordered"
+                    >
+                        {["ALL", ...uniqueAssignees].map((email) => (
+                            <SelectItem key={email as string}>
+                                {email === "ALL" ? "Tothom" : (email as string)}
+                            </SelectItem>
+                        ))}
+                    </Select>
+
+                    {(filterType !== "ALL" || filterAssignee !== "ALL") && (
+                        <Button size="sm" color="danger" variant="flat" onPress={() => { setFilterType("ALL"); setFilterAssignee("ALL"); }}>
+                            Netejar Filtres
+                        </Button>
+                    )}
+                </div>
+
                 {/* TAULER KANBAN */}
                 <DragDropContext onDragEnd={onDragEnd}>
-                    <div className="flex gap-4 overflow-x-auto pb-4 h-[calc(100vh-200px)]">
+                    <div className="flex gap-4 overflow-x-auto pb-4 h-[calc(100vh-270px)]">
                         {COLUMNS.map((column) => (
                             <Droppable key={column.id} droppableId={column.id}>
                                 {(provided) => (
@@ -142,11 +188,11 @@ export default function ProjectBoardPage() {
                                         <div className="p-4 border-b border-white/5 flex justify-between items-center bg-zinc-900/90 rounded-t-xl">
                                             <h3 className="font-bold text-white">{column.title}</h3>
                                             <Chip size="sm" variant="flat" color={column.color as any}>
-                                                {tasks.filter(t => t.status === column.id).length}
+                                                {filteredTasks.filter(t => t.status === column.id).length}
                                             </Chip>
                                         </div>
                                         <div className="p-3 flex flex-col gap-3 overflow-y-auto flex-grow">
-                                            {tasks.filter(t => t.status === column.id && !t.parentTaskId).map((task, index) => {
+                                            {filteredTasks.filter(t => t.status === column.id && !t.parentTaskId).map((task, index) => {
                                                 const taskType = task.type || 'TASK';
                                                 const taskPriority = task.priority || 'MEDIUM';
                                                 const typeStyle = TYPE_STYLES[taskType as keyof typeof TYPE_STYLES];
@@ -164,10 +210,7 @@ export default function ProjectBoardPage() {
                                                                     </CardHeader>
                                                                     
                                                                     <CardBody className="pt-3 pb-3 text-xs">
-                                                                        {/* CAIXA INFERIOR: Tot a la mateixa línia (justify-between els separa als extrems) */}
                                                                         <div className="flex justify-between items-center w-full mt-2">
-                                                                            
-                                                                            {/* Esquerra: Tipus i Prioritat */}
                                                                             <div className="flex flex-wrap gap-1">
                                                                                 <Chip size="sm" variant="flat" color={typeStyle?.color as any || "default"}>
                                                                                     {typeStyle?.icon} {typeStyle?.label}
@@ -176,8 +219,6 @@ export default function ProjectBoardPage() {
                                                                                     {priorityStyle?.icon}
                                                                                 </Chip>
                                                                             </div>
-                                                                            
-                                                                            {/* Dreta: Avatar (Assignat) */}
                                                                             {task.assigneeName && (
                                                                                 <div 
                                                                                     title={task.assigneeName} 
@@ -186,11 +227,9 @@ export default function ProjectBoardPage() {
                                                                                     {getInitials(task.assigneeName)}
                                                                                 </div>
                                                                             )}
-                                                                            
                                                                         </div>
                                                                     </CardBody>
                                                                 </Card>
-
                                                             </div>
                                                         )}
                                                     </Draggable>
@@ -205,7 +244,6 @@ export default function ProjectBoardPage() {
                     </div>
                 </DragDropContext>
                 
-                {/* MODALS */}
                 <CreateTaskModal 
                     isOpen={isCreateOpen} 
                     onOpenChange={onCreateOpenChange} 

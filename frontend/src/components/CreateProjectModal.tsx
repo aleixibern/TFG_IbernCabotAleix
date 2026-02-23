@@ -19,7 +19,8 @@ interface CreateProjectModalProps {
 }
 
 export const CreateProjectModal = ({ isOpen, onOpenChange, onProjectCreated }: CreateProjectModalProps) => {
-  const [formData, setFormData] = useState({ title: "", description: "" });
+  // 1. AFEGIM "subject" A L'ESTAT INICIAL
+  const [formData, setFormData] = useState({ title: "", description: "", subject: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -36,7 +37,8 @@ export const CreateProjectModal = ({ isOpen, onOpenChange, onProjectCreated }: C
     try {
       const response = await api.post<Project>("/projects", formData);
       onProjectCreated(response.data);
-      setFormData({ title: "", description: "" }); // Netejar formulari
+      // 2. NETEJEM TAMBÉ EL "subject" EN ACABAR
+      setFormData({ title: "", description: "", subject: "" }); 
       onClose(); // Tancar modal
     } catch (err) {
       console.error(err);
@@ -75,6 +77,22 @@ export const CreateProjectModal = ({ isOpen, onOpenChange, onProjectCreated }: C
                   inputWrapper: "border-white/20 hover:border-primary group-data-[focus=true]:border-primary"
                 }}
               />
+              
+              {/* 3. AFEGIM L'INPUT DE L'ASSIGNATURA */}
+              <Input
+                label="Assignatura"
+                placeholder="Ex: Treball de Final de Grau"
+                variant="bordered"
+                name="subject"
+                value={formData.subject}
+                onChange={handleChange}
+                classNames={{
+                  input: "text-white",
+                  label: "text-white/70",
+                  inputWrapper: "border-white/20 hover:border-primary group-data-[focus=true]:border-primary"
+                }}
+              />
+
               <Textarea
                 label="Descripció"
                 placeholder="Explica breument de què va..."

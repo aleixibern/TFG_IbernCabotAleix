@@ -33,6 +33,7 @@ public class ProjectService {
         Project project = Project.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
+                .subject(request.getSubject())
                 .owner(owner)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -64,6 +65,7 @@ public class ProjectService {
                 .id(project.getId())
                 .title(project.getTitle())
                 .description(project.getDescription())
+                .subject(project.getSubject())
                 .createdAt(project.getCreatedAt() != null ? project.getCreatedAt().toString() : "")
                 .username(project.getOwner() != null ? project.getOwner().getUsername() : "Sense nom")
                 .email(project.getOwner() != null ? project.getOwner().getEmail() : "")

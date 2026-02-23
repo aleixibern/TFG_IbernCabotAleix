@@ -20,7 +20,7 @@ export const MainLayout = ({ children, username, email }: MainLayoutProps) => {
     <div className="min-h-screen bg-black text-white">
       <Navbar maxWidth="xl" className="border-b border-white/10 bg-black">
         <NavbarBrand>
-          <span className="font-bold text-inherit text-xl text-primary">🚀 Gestor TFG</span>
+          <span className="font-bold text-inherit text-xl text-primary">Gestor de Projectes</span>
         </NavbarBrand>
 
         <NavbarContent className="hidden sm:flex gap-4" justify="center">

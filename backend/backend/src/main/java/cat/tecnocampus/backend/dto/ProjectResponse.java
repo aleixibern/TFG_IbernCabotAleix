@@ -15,4 +15,5 @@ public class ProjectResponse {
     private String username;
     private String email;
     private List<String> members;
+    private String subject;
 }
