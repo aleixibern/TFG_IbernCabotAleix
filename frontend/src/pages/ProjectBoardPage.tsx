@@ -11,6 +11,7 @@ import { MainLayout } from '../layouts/MainLayout';
 import { CreateTaskModal } from '../components/CreateTaskModal';
 import { EditTaskModal } from '../components/EditTaskModal';
 import { InviteMemberModal } from '../components/InviteMemberModal';
+import { getInitials } from '../utils/stringUtils';
 
 const COLUMNS = [
     { id: TaskStatus.BACKLOG, title: "Backlog 💡", color: "default" },
@@ -31,15 +32,6 @@ const PRIORITY_STYLES = {
     MEDIUM: { icon: "🟡", color: "warning" },
     HIGH: { icon: "🟠", color: "warning" },
     URGENT: { icon: "🔴", color: "danger" }
-};
-
-const getInitials = (name?: string) => {
-    if (!name) return "?";
-    const words = name.trim().split(/\s+/);
-    if (words.length >= 2) {
-        return (words[0][0] + words[1][0]).toUpperCase();
-    }
-    return name.slice(0, 2).toUpperCase();
 };
 
 export default function ProjectBoardPage() {
@@ -113,13 +105,11 @@ export default function ProjectBoardPage() {
         <MainLayout username={user?.username} email={user?.email}>
             <div className="flex flex-col h-full gap-6">
                 
-                {/* CAPÇALERA */}
                 <div className="flex justify-between items-center px-2 text-white">
                     <div>
                         <h1 className="text-3xl font-bold">{project?.title}</h1>
                         <div className="flex gap-2 items-center text-default-500">
                             <span>{project?.description}</span>
-                            {/* --- CANVI AQUÍ: Hem posat l'Assignatura (Subject) --- */}
                             {project?.subject && (
                                 <Chip size="sm" variant="flat" color="secondary">📚 {project.subject}</Chip>
                             )}
@@ -138,32 +128,17 @@ export default function ProjectBoardPage() {
                     </div>
                 </div>
 
-                {/* --- BARRA DE FILTRES --- */}
                 <div className="flex gap-4 items-center bg-zinc-900/50 p-4 rounded-xl border border-white/10">
                     <span className="text-white font-bold text-sm">🔍 Filtres:</span>
                     
-                    <Select 
-                        label="Tipus de Tasca" 
-                        selectedKeys={[filterType]} 
-                        onChange={(e) => setFilterType(e.target.value)} 
-                        size="sm" 
-                        className="w-48"
-                        variant="bordered"
-                    >
+                    <Select label="Tipus de Tasca" selectedKeys={[filterType]} onChange={(e) => setFilterType(e.target.value)} size="sm" className="w-48" variant="bordered">
                         <SelectItem key="ALL">Tots</SelectItem>
                         <SelectItem key="TASK">📝 Tasca</SelectItem>
                         <SelectItem key="FEATURE">🚀 Feature</SelectItem>
                         <SelectItem key="BUG">🐛 Bug</SelectItem>
                     </Select>
 
-                    <Select 
-                        label="Assignat a" 
-                        selectedKeys={[filterAssignee]} 
-                        onChange={(e) => setFilterAssignee(e.target.value)} 
-                        size="sm" 
-                        className="w-48"
-                        variant="bordered"
-                    >
+                    <Select label="Assignat a" selectedKeys={[filterAssignee]} onChange={(e) => setFilterAssignee(e.target.value)} size="sm" className="w-48" variant="bordered">
                         {["ALL", ...uniqueAssignees].map((email) => (
                             <SelectItem key={email as string}>
                                 {email === "ALL" ? "Tothom" : (email as string)}
@@ -178,7 +153,6 @@ export default function ProjectBoardPage() {
                     )}
                 </div>
 
-                {/* TAULER KANBAN */}
                 <DragDropContext onDragEnd={onDragEnd}>
                     <div className="flex gap-4 overflow-x-auto pb-4 h-[calc(100vh-270px)]">
                         {COLUMNS.map((column) => (
@@ -197,6 +171,9 @@ export default function ProjectBoardPage() {
                                                 const taskPriority = task.priority || 'MEDIUM';
                                                 const typeStyle = TYPE_STYLES[taskType as keyof typeof TYPE_STYLES];
                                                 const priorityStyle = PRIORITY_STYLES[taskPriority as keyof typeof PRIORITY_STYLES];
+                                                
+                                                // MÀGIA AQUÍ: Prioritzem sempre el nom. Si per algun motiu no hi és, agafem el correu.
+                                                const finalNameToShow = task.assigneeName || task.assigneeEmail;
 
                                                 return (
                                                     <Draggable key={task.id} draggableId={task.id.toString()} index={index}>
@@ -219,12 +196,13 @@ export default function ProjectBoardPage() {
                                                                                     {priorityStyle?.icon}
                                                                                 </Chip>
                                                                             </div>
-                                                                            {task.assigneeName && (
+                                                                            
+                                                                            {finalNameToShow && (
                                                                                 <div 
-                                                                                    title={task.assigneeName} 
+                                                                                    title={finalNameToShow} 
                                                                                     className="w-7 h-7 rounded-full bg-primary/20 border border-primary text-primary flex items-center justify-center text-[11px] font-bold shadow-sm shrink-0 ml-2"
                                                                                 >
-                                                                                    {getInitials(task.assigneeName)}
+                                                                                    {getInitials(finalNameToShow)}
                                                                                 </div>
                                                                             )}
                                                                         </div>
@@ -244,27 +222,9 @@ export default function ProjectBoardPage() {
                     </div>
                 </DragDropContext>
                 
-                <CreateTaskModal 
-                    isOpen={isCreateOpen} 
-                    onOpenChange={onCreateOpenChange} 
-                    projectId={id!} 
-                    onTaskCreated={(t) => setTasks([...tasks, t])} 
-                />
-                
-                <EditTaskModal 
-                    isOpen={isEditOpen} 
-                    onOpenChange={onEditOpenChange} 
-                    task={selectedTask}
-                    projectId={id!} 
-                    onTaskUpdated={(ut) => setTasks(tasks.map(t => t.id === ut.id ? ut : t))} 
-                    onTaskDeleted={(tid) => setTasks(tasks.filter(t => t.id !== tid))} 
-                />
-                
-                <InviteMemberModal 
-                    isOpen={isInviteOpen} 
-                    onOpenChange={onInviteOpenChange} 
-                    projectId={id!} 
-                />
+                <CreateTaskModal isOpen={isCreateOpen} onOpenChange={onCreateOpenChange} projectId={id!} onTaskCreated={(t) => setTasks([...tasks, t])} />
+                <EditTaskModal isOpen={isEditOpen} onOpenChange={onEditOpenChange} task={selectedTask} projectId={id!} onTaskUpdated={(ut) => setTasks(tasks.map(t => t.id === ut.id ? ut : t))} onTaskDeleted={(tid) => setTasks(tasks.filter(t => t.id !== tid))} />
+                <InviteMemberModal isOpen={isInviteOpen} onOpenChange={onInviteOpenChange} projectId={id!} />
             </div>
         </MainLayout>
     );

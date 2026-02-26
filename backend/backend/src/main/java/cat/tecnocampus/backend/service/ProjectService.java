@@ -3,10 +3,7 @@ package cat.tecnocampus.backend.service;
 import cat.tecnocampus.backend.domain.Project;
 import cat.tecnocampus.backend.domain.ProjectInvitation;
 import cat.tecnocampus.backend.domain.User;
-import cat.tecnocampus.backend.dto.InvitationResponse;
-import cat.tecnocampus.backend.dto.ProjectRequest;
-import cat.tecnocampus.backend.dto.ProjectResponse;
-import cat.tecnocampus.backend.dto.UserResponse;
+import cat.tecnocampus.backend.dto.*;
 import cat.tecnocampus.backend.repository.ProjectInvitationRepository;
 import cat.tecnocampus.backend.repository.ProjectRepository;
 import cat.tecnocampus.backend.repository.UserRepository;
@@ -160,5 +157,22 @@ public class ProjectService {
         }
 
         invitationRepository.delete(invitation);
+    }
+    @Transactional
+    public UserResponse updateUserProfile(String email, UserUpdateRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuari no trobat"));
+
+        if (request.getUsername() != null && !request.getUsername().trim().isEmpty()) {
+            user.setUsername(request.getUsername().trim());
+        }
+
+        User updatedUser = userRepository.save(user);
+
+        return UserResponse.builder()
+                .id(updatedUser.getId())
+                .username(updatedUser.getUsername())
+                .email(updatedUser.getEmail())
+                .build();
     }
 }

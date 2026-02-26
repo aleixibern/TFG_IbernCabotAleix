@@ -16,9 +16,11 @@ interface Props {
 
 const getInitials = (name?: string) => {
     if (!name) return "?";
-    const words = name.trim().split(/\s+/);
-    if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
-    return name.slice(0, 2).toUpperCase();
+    const cleanName = name.trim();
+    if (cleanName.includes('@')) return cleanName.substring(0, 2).toUpperCase();
+    const words = cleanName.split(/[\s_-]+/);
+    if (words.length >= 2) return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
+    return cleanName.substring(0, 2).toUpperCase();
 };
 
 export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpdated, onTaskDeleted }: Props) => {
@@ -35,7 +37,7 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
     const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
     const [loadingSubtask, setLoadingSubtask] = useState(false);
 
-    // --- ESTATS COMENTARIS ---
+    // Estats Comentaris
     const [comments, setComments] = useState<Comment[]>([]);
     const [newCommentText, setNewCommentText] = useState('');
     const [loadingComment, setLoadingComment] = useState(false);
@@ -49,8 +51,6 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
             setDueDate(task.dueDate || '');
             setAssigneeEmail(task.assigneeEmail || '');
             setSubtasks(task.subtasks || []);
-            
-            // Carregar els comentaris d'aquesta tasca
             loadComments(task.id);
         }
     }, [task]);
@@ -68,9 +68,13 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
         if (!task || !title) return;
         setLoading(true);
         try {
+            // --- CANVI CLAU: Si esborrem el correu, enviem "UNASSIGNED" ---
+            const finalAssigneeEmail = assigneeEmail === '' ? 'UNASSIGNED' : assigneeEmail;
+
             const updatedTask = await taskService.updateTask(task.id, {
                 title, description, type, priority, 
-                dueDate: dueDate || undefined, assigneeEmail: assigneeEmail || undefined
+                dueDate: dueDate || undefined, 
+                assigneeEmail: finalAssigneeEmail 
             });
             onTaskUpdated(updatedTask);
             onClose();
@@ -140,7 +144,6 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
         }
     };
 
-    // --- LÒGICA AFEGIR COMENTARI ---
     const handleAddComment = async () => {
         if (!newCommentText.trim() || !task) return;
         setLoadingComment(true);
@@ -183,7 +186,7 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
 
                             <div className="flex gap-4">
                                 <Input type="date" label="Data Límit" value={dueDate} onValueChange={setDueDate} variant="bordered" />
-                                <Input label="Assignar a (Email)" placeholder="usuari@exemple.com" value={assigneeEmail} onValueChange={setAssigneeEmail} variant="bordered" />
+                                <Input label="Assignar a (Email)" placeholder="Deixa-ho buit per desassignar" value={assigneeEmail} onValueChange={setAssigneeEmail} variant="bordered" />
                             </div>
 
                             <Divider className="my-1" />

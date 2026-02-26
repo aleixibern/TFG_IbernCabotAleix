@@ -3,6 +3,7 @@ package cat.tecnocampus.backend.service;
 import cat.tecnocampus.backend.domain.Project;
 import cat.tecnocampus.backend.domain.Task;
 import cat.tecnocampus.backend.domain.TaskStatus;
+import cat.tecnocampus.backend.domain.User;
 import cat.tecnocampus.backend.dto.TaskRequest;
 import cat.tecnocampus.backend.dto.TaskResponse;
 import cat.tecnocampus.backend.repository.ProjectRepository;
@@ -135,12 +136,14 @@ public class TaskService {
         if (request.getPriority() != null) task.setPriority(cat.tecnocampus.backend.domain.TaskPriority.valueOf(request.getPriority()));
         if (request.getDueDate() != null) task.setDueDate(request.getDueDate());
 
-        if (request.getAssigneeEmail() != null && !request.getAssigneeEmail().isEmpty()) {
-            cat.tecnocampus.backend.domain.User assignee = userRepository.findByEmail(request.getAssigneeEmail())
-                    .orElseThrow(() -> new RuntimeException("Usuari a assignar no trobat"));
-            task.setAssignee(assignee);
-        } else if (request.getAssigneeEmail() != null && request.getAssigneeEmail().isEmpty()) {
-            task.setAssignee(null);
+        if (request.getAssigneeEmail() != null) {
+            if (request.getAssigneeEmail().trim().isEmpty() || request.getAssigneeEmail().equals("UNASSIGNED")) {
+                task.setAssignee(null);
+            } else {
+                User assignee = userRepository.findByEmail(request.getAssigneeEmail())
+                        .orElseThrow(() -> new RuntimeException("Assignee not found"));
+                task.setAssignee(assignee);
+            }
         }
 
         return mapToResponse(taskRepository.save(task));
