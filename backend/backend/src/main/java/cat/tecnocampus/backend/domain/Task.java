@@ -67,6 +67,10 @@ public class Task {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sprint_id")
+    private Sprint sprint;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

@@ -4,13 +4,16 @@ import { Spinner, Button, Card, CardHeader, CardBody, Chip, useDisclosure, Selec
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import api from '../api/axios';
 import { taskService } from '../services/taskService';
+import { sprintService } from '../services/sprintService';
 import type { Project } from '../types/Project';
 import type { User } from '../types/User';
 import { type Task, TaskStatus } from '../types/Task';
+import type { Sprint } from '../types/Sprint'; 
 import { MainLayout } from '../layouts/MainLayout';
 import { CreateTaskModal } from '../components/CreateTaskModal';
 import { EditTaskModal } from '../components/EditTaskModal';
 import { InviteMemberModal } from '../components/InviteMemberModal';
+import { CreateSprintModal } from '../components/CreateSprintModal'; 
 import { getInitials } from '../utils/stringUtils';
 
 const COLUMNS = [
@@ -41,11 +44,13 @@ export default function ProjectBoardPage() {
     const { isOpen: isCreateOpen, onOpen: onCreateOpen, onOpenChange: onCreateOpenChange } = useDisclosure();
     const { isOpen: isEditOpen, onOpen: onEditOpen, onOpenChange: onEditOpenChange } = useDisclosure();
     const { isOpen: isInviteOpen, onOpen: onInviteOpen, onOpenChange: onInviteOpenChange } = useDisclosure();
+    const { isOpen: isSprintOpen, onOpen: onSprintOpen, onOpenChange: onSprintOpenChange } = useDisclosure(); 
 
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [project, setProject] = useState<Project | null>(null);
     const [user, setUser] = useState<User | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
+    const [sprints, setSprints] = useState<Sprint[]>([]); 
     const [loading, setLoading] = useState(true);
 
     const [filterType, setFilterType] = useState<string>("ALL");
@@ -55,15 +60,17 @@ export default function ProjectBoardPage() {
         const fetchData = async () => {
             if (!id) return;
             try {
-                const [projectRes, userRes, tasksRes] = await Promise.all([
+                const [projectRes, userRes, tasksRes, sprintsRes] = await Promise.all([
                     api.get<Project>(`/projects/${id}`),
                     api.get<User>('/users/me'),
-                    taskService.getTasksByProject(id)
+                    taskService.getTasksByProject(id),
+                    sprintService.getSprintsByProject(id)
                 ]);
                 
                 setProject(projectRes.data);
                 setUser(userRes.data);
                 setTasks(tasksRes);
+                setSprints(sprintsRes); 
             } catch (error) {
                 console.error("Error carregant dades", error);
                 navigate('/dashboard'); 
@@ -103,8 +110,9 @@ export default function ProjectBoardPage() {
 
     return (
         <MainLayout username={user?.username} email={user?.email}>
-            <div className="flex flex-col h-full gap-6">
+            <div className="flex flex-col h-full gap-5">
                 
+                {/* --- CAPÇALERA --- */}
                 <div className="flex justify-between items-center px-2 text-white">
                     <div>
                         <h1 className="text-3xl font-bold">{project?.title}</h1>
@@ -119,16 +127,31 @@ export default function ProjectBoardPage() {
                         <Button color="secondary" variant="flat" onPress={onInviteOpen}>
                             👥 Convidar
                         </Button>
+                        <Button color="warning" variant="flat" onPress={onSprintOpen}> 
+                            🏃‍♂️ Nou Sprint
+                        </Button>
                         <Button color="primary" variant="shadow" onPress={onCreateOpen}>
                             + Nova Tasca
-                        </Button>
-                        <Button color="default" variant="flat" onPress={() => navigate('/dashboard')}>
-                            Sortir
                         </Button>
                     </div>
                 </div>
 
-                <div className="flex gap-4 items-center bg-zinc-900/50 p-4 rounded-xl border border-white/10">
+                {sprints.length > 0 && (
+                    <div className="flex gap-4 overflow-x-auto pb-2 px-2">
+                        {sprints.map(sprint => (
+                            <div key={sprint.id} className="bg-warning/10 border border-warning/30 rounded-lg p-3 min-w-[220px] shrink-0 flex flex-col gap-1">
+                                <h4 className="text-warning font-bold text-sm flex items-center gap-2">
+                                    ⏱️ {sprint.name}
+                                </h4>
+                                <p className="text-xs text-default-400">
+                                    {new Date(sprint.startDate).toLocaleDateString()} - {new Date(sprint.endDate).toLocaleDateString()}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                <div className="flex gap-4 items-center bg-zinc-900/50 p-4 rounded-xl border border-white/10 shrink-0">
                     <span className="text-white font-bold text-sm">🔍 Filtres:</span>
                     
                     <Select label="Tipus de Tasca" selectedKeys={[filterType]} onChange={(e) => setFilterType(e.target.value)} size="sm" className="w-48" variant="bordered">
@@ -154,7 +177,7 @@ export default function ProjectBoardPage() {
                 </div>
 
                 <DragDropContext onDragEnd={onDragEnd}>
-                    <div className="flex gap-4 overflow-x-auto pb-4 h-[calc(100vh-270px)]">
+                    <div className="flex gap-4 overflow-x-auto pb-4 h-[calc(100vh-340px)]">
                         {COLUMNS.map((column) => (
                             <Droppable key={column.id} droppableId={column.id}>
                                 {(provided) => (
@@ -172,7 +195,6 @@ export default function ProjectBoardPage() {
                                                 const typeStyle = TYPE_STYLES[taskType as keyof typeof TYPE_STYLES];
                                                 const priorityStyle = PRIORITY_STYLES[taskPriority as keyof typeof PRIORITY_STYLES];
                                                 
-                                                // MÀGIA AQUÍ: Prioritzem sempre el nom. Si per algun motiu no hi és, agafem el correu.
                                                 const finalNameToShow = task.assigneeName || task.assigneeEmail;
 
                                                 return (
@@ -225,6 +247,13 @@ export default function ProjectBoardPage() {
                 <CreateTaskModal isOpen={isCreateOpen} onOpenChange={onCreateOpenChange} projectId={id!} onTaskCreated={(t) => setTasks([...tasks, t])} />
                 <EditTaskModal isOpen={isEditOpen} onOpenChange={onEditOpenChange} task={selectedTask} projectId={id!} onTaskUpdated={(ut) => setTasks(tasks.map(t => t.id === ut.id ? ut : t))} onTaskDeleted={(tid) => setTasks(tasks.filter(t => t.id !== tid))} />
                 <InviteMemberModal isOpen={isInviteOpen} onOpenChange={onInviteOpenChange} projectId={id!} />
+                
+                <CreateSprintModal 
+                    isOpen={isSprintOpen} 
+                    onOpenChange={onSprintOpenChange} 
+                    projectId={id!} 
+                    onSprintCreated={(newSprint) => setSprints([...sprints, newSprint])} 
+                />
             </div>
         </MainLayout>
     );
