@@ -15,6 +15,7 @@ import { EditTaskModal } from '../components/EditTaskModal';
 import { InviteMemberModal } from '../components/InviteMemberModal';
 import { CreateSprintModal } from '../components/CreateSprintModal'; 
 import { getInitials } from '../utils/stringUtils';
+import { ProjectAnalytics } from '../components/ProjectAnalytics';
 
 const COLUMNS = [
     { id: TaskStatus.BACKLOG, title: "Backlog 💡", color: "default" },
@@ -177,6 +178,7 @@ export default function ProjectBoardPage() {
                         }}>
                         <Tab key="backlog" title={<div className="flex items-center space-x-2"><span>📚 Backlog & Planificació</span></div>} />
                         <Tab key="tablero" title={<div className="flex items-center space-x-2"><span>🚀 Tablero Actiu</span></div>} />
+                        <Tab key="estadistiques" title={<div className="flex items-center space-x-2"><span>📊 Estadístiques</span></div>} />
                     </Tabs>
                 </div>
 
@@ -236,29 +238,35 @@ export default function ProjectBoardPage() {
                             <div className="mt-4">
                                 <h2 className="text-xl font-bold text-white mb-4">Tasques sense assignar (Backlog)</h2>
                                 <Droppable droppableId="backlog">
-                                    {(provided) => (
-                                        <div ref={provided.innerRef} {...provided.droppableProps} className="bg-zinc-900 border border-white/10 rounded-xl p-4 min-h-[150px]">
-                                            {tasks.filter(t => !t.sprintId).map((task, index) => (
-                                                <Draggable key={`bl-${task.id}`} draggableId={task.id.toString()} index={index}>
-                                                    {(provided) => (
-                                                        <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
-                                                            className="bg-zinc-800 p-3 rounded-lg border border-white/10 flex justify-between items-center mb-2 hover:border-primary/50 cursor-grab"
-                                                            onClick={() => { setSelectedTask(task); onEditOpen(); }}>
-                                                            <span className="text-sm text-white font-medium">{task.title}</span>
-                                                            <div className="flex gap-2 items-center">
-                                                                {task.assigneeName && <Chip size="sm" variant="dot" color="primary">{task.assigneeName}</Chip>}
-                                                                <Chip size="sm" variant="flat">{task.status}</Chip>
+                                    {(provided) => {
+                                        const backlogTasks = tasks.filter(t => 
+                                            !t.parentTaskId && (!t.sprintId || sprints.find(s => s.id === t.sprintId)?.status === 'CLOSED')
+                                        );
+
+                                        return (
+                                            <div ref={provided.innerRef} {...provided.droppableProps} className="bg-zinc-900 border border-white/10 rounded-xl p-4 min-h-[150px]">
+                                                {backlogTasks.map((task, index) => (
+                                                    <Draggable key={`bl-${task.id}`} draggableId={task.id.toString()} index={index}>
+                                                        {(provided) => (
+                                                            <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
+                                                                className="bg-zinc-800 p-3 rounded-lg border border-white/10 flex justify-between items-center mb-2 hover:border-primary/50 cursor-grab"
+                                                                onClick={() => { setSelectedTask(task); onEditOpen(); }}>
+                                                                <span className="text-sm text-white font-medium">{task.title}</span>
+                                                                <div className="flex gap-2 items-center">
+                                                                    {task.assigneeName && <Chip size="sm" variant="dot" color="primary">{task.assigneeName}</Chip>}
+                                                                    <Chip size="sm" variant="flat">{task.status}</Chip>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    )}
-                                                </Draggable>
-                                            ))}
-                                            {provided.placeholder}
-                                            {tasks.filter(t => !t.sprintId).length === 0 && (
-                                                <p className="text-center text-default-500 text-sm italic py-4">No hi ha tasques al Backlog.</p>
-                                            )}
-                                        </div>
-                                    )}
+                                                        )}
+                                                    </Draggable>
+                                                ))}
+                                                {provided.placeholder}
+                                                {backlogTasks.length === 0 && (
+                                                    <p className="text-center text-default-500 text-sm italic py-4">No hi ha tasques al Backlog.</p>
+                                                )}
+                                            </div>
+                                        );
+                                    }}
                                 </Droppable>
                             </div>
 
@@ -365,6 +373,12 @@ export default function ProjectBoardPage() {
                                 ))}
                             </div>
                         </DragDropContext>
+                    </div>
+                )}
+
+                {activeTab === "estadistiques" && (
+                    <div className="flex-grow overflow-y-auto">
+                        <ProjectAnalytics tasks={tasks} />
                     </div>
                 )}
                 
