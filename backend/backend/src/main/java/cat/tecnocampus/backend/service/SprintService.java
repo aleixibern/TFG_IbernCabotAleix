@@ -2,6 +2,7 @@ package cat.tecnocampus.backend.service;
 
 import cat.tecnocampus.backend.domain.Project;
 import cat.tecnocampus.backend.domain.Sprint;
+import cat.tecnocampus.backend.domain.SprintStatus;
 import cat.tecnocampus.backend.dto.SprintRequest;
 import cat.tecnocampus.backend.dto.SprintResponse;
 import cat.tecnocampus.backend.repository.ProjectRepository;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -45,6 +47,7 @@ public class SprintService {
                 .startDate(startDate)
                 .endDate(endDate)
                 .project(project)
+                .status(SprintStatus.PLANNED)
                 .build();
 
         Sprint savedSprint = sprintRepository.save(sprint);
@@ -57,6 +60,45 @@ public class SprintService {
                 .collect(Collectors.toList());
     }
 
+    public SprintResponse startSprint(Long projectId, Long sprintId, String userEmail) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Projecte no trobat"));
+
+        boolean isOwner = project.getOwner().getEmail().equals(userEmail);
+        boolean isMember = project.getMembers().stream().anyMatch(m -> m.getEmail().equals(userEmail));
+        if (!isOwner && !isMember) throw new RuntimeException("No autoritzat per gestionar Sprints");
+
+        Optional<Sprint> currentActive = sprintRepository.findFirstByProjectIdAndStatus(projectId, SprintStatus.ACTIVE);
+        if (currentActive.isPresent()) {
+            throw new RuntimeException("No pots iniciar aquest Sprint perquè ja n'hi ha un d'actiu. Has de completar l'actual primer.");
+        }
+
+        Sprint sprintToStart = sprintRepository.findById(sprintId)
+                .orElseThrow(() -> new RuntimeException("Sprint no trobat"));
+
+        if (!sprintToStart.getProject().getId().equals(projectId)) {
+            throw new RuntimeException("Aquest Sprint no pertany a aquest projecte.");
+        }
+
+        sprintToStart.setStatus(SprintStatus.ACTIVE);
+
+        sprintToStart.setStartDate(java.time.LocalDate.now());
+
+        return mapToResponse(sprintRepository.save(sprintToStart));
+    }
+
+    public SprintResponse getActiveSprint(Long projectId, String userEmail) {
+        return sprintRepository.findFirstByProjectIdAndStatus(projectId, SprintStatus.ACTIVE)
+                .map(this::mapToResponse)
+                .orElse(null);
+    }
+
+    public SprintResponse completeSprint(Long projectId, Long sprintId, String userEmail) {
+        Sprint sprint = sprintRepository.findById(sprintId).orElseThrow(() -> new RuntimeException("Sprint no trobat"));
+        sprint.setStatus(SprintStatus.CLOSED);
+        return mapToResponse(sprintRepository.save(sprint));
+    }
+
     private SprintResponse mapToResponse(Sprint sprint) {
         return SprintResponse.builder()
                 .id(sprint.getId())
@@ -64,6 +106,7 @@ public class SprintService {
                 .startDate(sprint.getStartDate())
                 .endDate(sprint.getEndDate())
                 .projectId(sprint.getProject().getId())
+                .status(sprint.getStatus() != null ? sprint.getStatus().name() : "PLANNED")
                 .build();
     }
 }

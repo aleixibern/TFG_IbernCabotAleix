@@ -14,7 +14,6 @@ public class TaskResponse {
     private String description;
     private String status;
     private String createdAt;
-
     private String type;
     private String priority;
     private LocalDate dueDate;
@@ -22,4 +21,5 @@ public class TaskResponse {
     private String assigneeEmail;
     private Long parentTaskId;
     private List<TaskResponse> subtasks;
+    private Long sprintId;
 }

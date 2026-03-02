@@ -22,4 +22,5 @@ export interface Task {
     assigneeEmail?: string;
     parentTaskId?: number;
     subtasks?: Task[];
+    sprintId?: number | null;
 }

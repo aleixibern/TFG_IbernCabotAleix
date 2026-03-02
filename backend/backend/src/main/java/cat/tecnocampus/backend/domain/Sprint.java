@@ -29,4 +29,7 @@ public class Sprint {
 
     @OneToMany(mappedBy = "sprint")
     private List<Task> tasks;
+
+    @Enumerated(EnumType.STRING)
+    private SprintStatus status;
 }

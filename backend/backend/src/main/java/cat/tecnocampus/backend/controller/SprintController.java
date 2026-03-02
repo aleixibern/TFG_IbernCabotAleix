@@ -31,4 +31,28 @@ public class SprintController {
             Principal principal) {
         return ResponseEntity.ok(sprintService.getSprintsByProject(projectId, principal.getName()));
     }
+
+    @PutMapping("/{sprintId}/start")
+    public ResponseEntity<SprintResponse> startSprint(
+            @PathVariable Long projectId,
+            @PathVariable Long sprintId,
+            Principal principal) {
+        return ResponseEntity.ok(sprintService.startSprint(projectId, sprintId, principal.getName()));
+    }
+
+    @GetMapping("/active")
+    public ResponseEntity<SprintResponse> getActiveSprint(
+            @PathVariable Long projectId,
+            Principal principal) {
+        SprintResponse activeSprint = sprintService.getActiveSprint(projectId, principal.getName());
+        if (activeSprint == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(activeSprint);
+    }
+
+    @PutMapping("/{sprintId}/complete")
+    public ResponseEntity<SprintResponse> completeSprint(@PathVariable Long projectId, @PathVariable Long sprintId, java.security.Principal principal) {
+        return ResponseEntity.ok(sprintService.completeSprint(projectId, sprintId, principal.getName()));
+    }
 }

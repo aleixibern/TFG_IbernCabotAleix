@@ -8,10 +8,12 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface SprintRepository extends JpaRepository<Sprint, Long> {
     List<Sprint> findByProjectId(Long projectId);
+    Optional<Sprint> findFirstByProjectIdAndStatus(Long projectId, cat.tecnocampus.backend.domain.SprintStatus status);
 
     @Query("SELECT COUNT(s) > 0 FROM Sprint s WHERE s.project.id = :projectId AND " +
             "((s.startDate BETWEEN :newStart AND :newEnd) OR " +

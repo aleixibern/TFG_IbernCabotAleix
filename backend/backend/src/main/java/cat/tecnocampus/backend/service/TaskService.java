@@ -7,6 +7,7 @@ import cat.tecnocampus.backend.domain.User;
 import cat.tecnocampus.backend.dto.TaskRequest;
 import cat.tecnocampus.backend.dto.TaskResponse;
 import cat.tecnocampus.backend.repository.ProjectRepository;
+import cat.tecnocampus.backend.repository.SprintRepository;
 import cat.tecnocampus.backend.repository.TaskRepository;
 import cat.tecnocampus.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
+    private final SprintRepository sprintRepository;
 
     public TaskResponse createTask(Long projectId, TaskRequest request, String userEmail) {
         Project project = projectRepository.findById(projectId)
@@ -110,6 +112,7 @@ public class TaskService {
                 .assigneeName(task.getAssignee() != null ? task.getAssignee().getUsername() : null)
                 .assigneeEmail(task.getAssignee() != null ? task.getAssignee().getEmail() : null)
                 .parentTaskId(task.getParentTask() != null ? task.getParentTask().getId() : null)
+                .sprintId(task.getSprint() != null ? task.getSprint().getId() : null)
                 .subtasks(task.getSubtasks() != null ?
                         task.getSubtasks().stream().map(sub -> TaskResponse.builder()
                                 .id(sub.getId())
@@ -145,7 +148,15 @@ public class TaskService {
                 task.setAssignee(assignee);
             }
         }
-
+        if (request.getSprintId() != null) {
+            if (request.getSprintId() == -1) {
+                task.setSprint(null);
+            } else {
+                cat.tecnocampus.backend.domain.Sprint sprint = sprintRepository.findById(request.getSprintId())
+                        .orElseThrow(() -> new RuntimeException("Sprint no trobat"));
+                task.setSprint(sprint);
+            }
+        }
         return mapToResponse(taskRepository.save(task));
     }
 }

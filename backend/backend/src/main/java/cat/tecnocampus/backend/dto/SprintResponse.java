@@ -12,4 +12,5 @@ public class SprintResponse {
     private LocalDate startDate;
     private LocalDate endDate;
     private Long projectId;
+    private String status;
 }

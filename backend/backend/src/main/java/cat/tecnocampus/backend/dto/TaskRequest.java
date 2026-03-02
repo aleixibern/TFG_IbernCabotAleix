@@ -13,4 +13,5 @@ public class TaskRequest {
     private LocalDate dueDate;
     private String assigneeEmail;
     private Long parentTaskId;
+    private Long sprintId;
 }
