@@ -11,7 +11,7 @@ export const sprintService = {
         const response = await api.get(`/projects/${projectId}/sprints`);
         return response.data;
     },
-    
+
     startSprint: async (projectId: string, sprintId: number): Promise<Sprint> => {
         const response = await api.put(`/projects/${projectId}/sprints/${sprintId}/start`);
         return response.data;
@@ -33,5 +33,9 @@ export const sprintService = {
             console.error("Error obtenint el sprint actiu", error);
             return null;
         }
+    },
+
+    deleteSprint: async (projectId: string, sprintId: number): Promise<void> => {
+        await api.delete(`/projects/${projectId}/sprints/${sprintId}`);
     }
 };

@@ -22,4 +22,5 @@ public class TaskResponse {
     private Long parentTaskId;
     private List<TaskResponse> subtasks;
     private Long sprintId;
+    private List<String> links;
 }

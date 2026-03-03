@@ -7,6 +7,7 @@ import cat.tecnocampus.backend.dto.SprintRequest;
 import cat.tecnocampus.backend.dto.SprintResponse;
 import cat.tecnocampus.backend.repository.ProjectRepository;
 import cat.tecnocampus.backend.repository.SprintRepository;
+import cat.tecnocampus.backend.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,7 @@ public class SprintService {
 
     private final SprintRepository sprintRepository;
     private final ProjectRepository projectRepository;
+    private final TaskRepository taskRepository;
 
     public SprintResponse createSprint(Long projectId, SprintRequest request, String userEmail) {
         Project project = projectRepository.findById(projectId)
@@ -97,6 +99,20 @@ public class SprintService {
         Sprint sprint = sprintRepository.findById(sprintId).orElseThrow(() -> new RuntimeException("Sprint no trobat"));
         sprint.setStatus(SprintStatus.CLOSED);
         return mapToResponse(sprintRepository.save(sprint));
+    }
+
+    public void deleteSprint(Long projectId, Long sprintId, String userEmail) {
+        Sprint sprint = sprintRepository.findById(sprintId)
+                .orElseThrow(() -> new RuntimeException("Sprint no trobat"));
+
+        List<cat.tecnocampus.backend.domain.Task> tasks = taskRepository.findBySprintId(sprintId);
+
+        for (cat.tecnocampus.backend.domain.Task task : tasks) {
+            task.setSprint(null);
+            taskRepository.save(task);
+        }
+
+        sprintRepository.delete(sprint);
     }
 
     private SprintResponse mapToResponse(Sprint sprint) {

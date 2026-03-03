@@ -55,4 +55,14 @@ public class SprintController {
     public ResponseEntity<SprintResponse> completeSprint(@PathVariable Long projectId, @PathVariable Long sprintId, java.security.Principal principal) {
         return ResponseEntity.ok(sprintService.completeSprint(projectId, sprintId, principal.getName()));
     }
+
+    @DeleteMapping("/{sprintId}")
+    public ResponseEntity<Void> deleteSprint(
+            @PathVariable Long projectId,
+            @PathVariable Long sprintId,
+            java.security.Principal principal) {
+        sprintService.deleteSprint(projectId, sprintId, principal.getName());
+        return ResponseEntity.noContent().build();
+    }
+
 }

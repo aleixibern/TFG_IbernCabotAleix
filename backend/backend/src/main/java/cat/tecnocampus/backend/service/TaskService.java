@@ -109,6 +109,7 @@ public class TaskService {
                 .type(task.getType() != null ? task.getType().name() : null)
                 .priority(task.getPriority() != null ? task.getPriority().name() : null)
                 .dueDate(task.getDueDate())
+                .links(task.getLinks())
                 .assigneeName(task.getAssignee() != null ? task.getAssignee().getUsername() : null)
                 .assigneeEmail(task.getAssignee() != null ? task.getAssignee().getEmail() : null)
                 .parentTaskId(task.getParentTask() != null ? task.getParentTask().getId() : null)
@@ -135,6 +136,7 @@ public class TaskService {
 
         if (request.getTitle() != null) task.setTitle(request.getTitle());
         if (request.getDescription() != null) task.setDescription(request.getDescription());
+        if (request.getLinks() != null) task.setLinks(request.getLinks());
         if (request.getType() != null) task.setType(cat.tecnocampus.backend.domain.TaskType.valueOf(request.getType()));
         if (request.getPriority() != null) task.setPriority(cat.tecnocampus.backend.domain.TaskPriority.valueOf(request.getPriority()));
         if (request.getDueDate() != null) task.setDueDate(request.getDueDate());

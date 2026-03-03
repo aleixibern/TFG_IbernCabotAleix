@@ -99,6 +99,22 @@ export default function ProjectBoardPage() {
         }
     };
 
+    const handleDeleteSprint = async (sprintId: number) => {
+        if (!id) return;
+        if (confirm("Segur que vols esborrar aquest Sprint? Les tasques que contingui tornaran al Backlog.")) {
+            try {
+                await sprintService.deleteSprint(id, sprintId);
+                // L'esborrem de la llista visual
+                setSprints(prev => prev.filter(s => s.id !== sprintId));
+                // I refresquem les tasques forçant el backend o simplement actualitzant l'estat local
+                setTasks(prev => prev.map(t => t.sprintId === sprintId ? { ...t, sprintId: null } : t));
+            } catch (error) {
+                console.error("Error esborrant sprint", error);
+                alert("No s'ha pogut esborrar l'sprint.");
+            }
+        }
+    };
+
     const handleCompleteSprint = async (sprintId: number) => {
         if (!id) return;
         if (confirm("Segur que vols completar aquest Sprint? Les tasques no esborrades es quedaran on estan.")) {
@@ -194,7 +210,7 @@ export default function ProjectBoardPage() {
                             <div className="flex flex-col gap-4">
                                 {sprints.filter(s => s.status !== 'CLOSED').map(sprint => (
                                     <div key={sprint.id} className="bg-zinc-900 border border-white/10 rounded-xl p-4 flex flex-col gap-3">
-                                        <div className="flex justify-between items-center">
+                                        <div className="flex justify-between items-center w-full">
                                             <div className="flex items-center gap-3">
                                                 <h4 className="text-white font-bold text-lg">⏱️ {sprint.name}</h4>
                                                 <Chip size="sm" color={sprint.status === 'ACTIVE' ? 'success' : 'warning'} variant="flat">{sprint.status}</Chip>
@@ -202,11 +218,16 @@ export default function ProjectBoardPage() {
                                                     {new Date(sprint.startDate).toLocaleDateString()} - {new Date(sprint.endDate).toLocaleDateString()}
                                                 </span>
                                             </div>
-                                            {sprint.status === 'PLANNED' && (
-                                                <Button size="sm" color="primary" variant="flat" isLoading={startingSprint === sprint.id} onPress={() => handleStartSprint(sprint.id)}>
-                                                    Iniciar Sprint
+                                            <div className="flex items-center gap-2">
+                                                {sprint.status === 'PLANNED' && (
+                                                    <Button size="sm" color="primary" variant="flat" isLoading={startingSprint === sprint.id} onPress={() => handleStartSprint(sprint.id)}>
+                                                        Iniciar Sprint
+                                                    </Button>
+                                                )}
+                                                <Button size="sm" color="danger" variant="light" isIconOnly onPress={() => handleDeleteSprint(sprint.id)} title="Esborrar Sprint">
+                                                    🗑️
                                                 </Button>
-                                            )}
+                                            </div>
                                         </div>
                                         
                                         <Droppable droppableId={`sprint-${sprint.id}`}>

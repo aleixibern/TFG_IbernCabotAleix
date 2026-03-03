@@ -8,10 +8,8 @@ interface Props {
 }
 
 export const ProjectAnalytics = ({ tasks }: Props) => {
-    // 0. Ens quedem només amb les tasques principals (ignorem subtasques perquè els números quadrin)
     const mainTasks = tasks.filter(t => !t.parentTaskId);
 
-    // 1. Preparem les dades pel Gràfic de Donut (Tasques per Estat)
     const statusData = useMemo(() => {
         const counts = { BACKLOG: 0, READY: 0, IN_PROGRESS: 0, IN_REVIEW: 0, DONE: 0 };
         
@@ -22,15 +20,14 @@ export const ProjectAnalytics = ({ tasks }: Props) => {
         });
         
         return [
-            { name: 'Backlog', value: counts.BACKLOG, color: '#3f3f46' }, // Gris
-            { name: 'Ready', value: counts.READY, color: '#9353d3' }, // Lila
-            { name: 'In Progress', value: counts.IN_PROGRESS, color: '#006fee' }, // Blau
-            { name: 'In Review', value: counts.IN_REVIEW, color: '#f5a524' }, // Taronja
-            { name: 'Done', value: counts.DONE, color: '#17c964' } // Verd
-        ].filter(d => d.value > 0); // Només ensenyem els que tenen alguna tasca
+            { name: 'Backlog', value: counts.BACKLOG, color: '#3f3f46' }, 
+            { name: 'Ready', value: counts.READY, color: '#9353d3' }, 
+            { name: 'In Progress', value: counts.IN_PROGRESS, color: '#006fee' }, 
+            { name: 'In Review', value: counts.IN_REVIEW, color: '#f5a524' },
+            { name: 'Done', value: counts.DONE, color: '#17c964' } 
+        ].filter(d => d.value > 0); 
     }, [mainTasks]);
 
-    // 2. Preparem les dades pel Gràfic de Barres (Càrrega per Usuari)
     const assigneeData = useMemo(() => {
         const counts: Record<string, number> = {};
         
@@ -42,10 +39,9 @@ export const ProjectAnalytics = ({ tasks }: Props) => {
         return Object.keys(counts).map(key => ({
             nom: key,
             Tasques: counts[key]
-        })).sort((a, b) => b.Tasques - a.Tasques); // Ordenem de més a menys feina
+        })).sort((a, b) => b.Tasques - a.Tasques); 
     }, [mainTasks]);
 
-    // Si no hi ha tasques principals, ensenyem el missatge buit
     if (mainTasks.length === 0) {
         return (
             <div className="text-center p-8 text-default-500">
@@ -57,7 +53,6 @@ export const ProjectAnalytics = ({ tasks }: Props) => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-2">
             
-            {/* GRÀFIC 1: ESTAT DEL PROJECTE */}
             <Card className="bg-zinc-900 border border-white/10">
                 <CardHeader className="pb-0 pt-4 px-4 flex-col items-start">
                     <h4 className="font-bold text-lg text-white">Estat Global del Projecte</h4>
@@ -92,7 +87,6 @@ export const ProjectAnalytics = ({ tasks }: Props) => {
                 </CardBody>
             </Card>
 
-            {/* GRÀFIC 2: CÀRREGA DE TREBALL */}
             <Card className="bg-zinc-900 border border-white/10">
                 <CardHeader className="pb-0 pt-4 px-4 flex-col items-start">
                     <h4 className="font-bold text-lg text-white">Càrrega de Treball per Membre</h4>

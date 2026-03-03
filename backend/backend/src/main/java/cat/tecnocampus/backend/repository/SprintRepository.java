@@ -15,7 +15,8 @@ public interface SprintRepository extends JpaRepository<Sprint, Long> {
     List<Sprint> findByProjectId(Long projectId);
     Optional<Sprint> findFirstByProjectIdAndStatus(Long projectId, cat.tecnocampus.backend.domain.SprintStatus status);
 
-    @Query("SELECT COUNT(s) > 0 FROM Sprint s WHERE s.project.id = :projectId AND " +
+    @Query("SELECT COUNT(s) > 0 FROM Sprint s WHERE s.project.id = :projectId " +
+            "AND s.status != 'CLOSED' AND " + // <-- NOU: IGNOREM ELS TANCATS
             "((s.startDate BETWEEN :newStart AND :newEnd) OR " +
             " (s.endDate BETWEEN :newStart AND :newEnd) OR " +
             " (:newStart BETWEEN s.startDate AND s.endDate))")

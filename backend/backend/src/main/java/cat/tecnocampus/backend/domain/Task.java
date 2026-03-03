@@ -78,4 +78,9 @@ public class Task {
         if (type == null) type = TaskType.TASK;
         if (priority == null) priority = TaskPriority.MEDIUM;
     }
+
+    @ElementCollection
+    @CollectionTable(name = "task_links", joinColumns = @JoinColumn(name = "task_id"))
+    @Column(name = "link")
+    private List<String> links = new ArrayList<>();
 }

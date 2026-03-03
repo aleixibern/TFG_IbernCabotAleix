@@ -2,6 +2,7 @@ package cat.tecnocampus.backend.dto;
 
 import lombok.Data;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class TaskRequest {
@@ -14,4 +15,5 @@ public class TaskRequest {
     private String assigneeEmail;
     private Long parentTaskId;
     private Long sprintId;
+    private List<String> links;
 }
