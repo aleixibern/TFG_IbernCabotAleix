@@ -16,7 +16,7 @@ services:
 
   # 2. BACKEND SPRING BOOT
   backend:
-    build: ./backend
+    build: ./backend/backend
     container_name: tfg_backend
     ports:
       - "8080:8080"
