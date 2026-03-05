@@ -71,6 +71,24 @@ public class Task {
     @JoinColumn(name = "sprint_id")
     private Sprint sprint;
 
+    @ElementCollection
+    @CollectionTable(name = "task_links", joinColumns = @JoinColumn(name = "task_id"))
+    @Column(name = "link")
+    private List<String> links = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "task_dependencies",
+            joinColumns = @JoinColumn(name = "task_id"),
+            inverseJoinColumns = @JoinColumn(name = "dependency_id")
+    )
+    @Builder.Default
+    private List<Task> dependencies = new ArrayList<>();
+
+    @ManyToMany(mappedBy = "dependencies")
+    @Builder.Default
+    private List<Task> dependentTasks = new ArrayList<>();
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -78,9 +96,4 @@ public class Task {
         if (type == null) type = TaskType.TASK;
         if (priority == null) priority = TaskPriority.MEDIUM;
     }
-
-    @ElementCollection
-    @CollectionTable(name = "task_links", joinColumns = @JoinColumn(name = "task_id"))
-    @Column(name = "link")
-    private List<String> links = new ArrayList<>();
 }

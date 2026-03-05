@@ -7,9 +7,11 @@ interface Props {
     onOpenChange: (isOpen: boolean) => void;
     projectId: string;
     onTaskCreated: (task: any) => void;
+    // NOU: Permetem rebre l'ID de l'Sprint per defecte
+    sprintId?: number | null;
 }
 
-export const CreateTaskModal = ({ isOpen, onOpenChange, projectId, onTaskCreated }: Props) => {
+export const CreateTaskModal = ({ isOpen, onOpenChange, projectId, onTaskCreated, sprintId }: Props) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [type, setType] = useState('TASK');
@@ -28,7 +30,9 @@ export const CreateTaskModal = ({ isOpen, onOpenChange, projectId, onTaskCreated
                 type,
                 priority,
                 dueDate: dueDate || undefined,
-                assigneeEmail: assigneeEmail || undefined
+                assigneeEmail: assigneeEmail || undefined,
+                // NOU: Si tenim un SprintId, l'enviem a la base de dades
+                sprintId: sprintId || undefined
             });
             onTaskCreated(newTask);
             
@@ -47,7 +51,13 @@ export const CreateTaskModal = ({ isOpen, onOpenChange, projectId, onTaskCreated
             <ModalContent>
                 {(onClose) => (
                     <>
-                        <ModalHeader>✨ Nova Tasca</ModalHeader>
+                        <ModalHeader>
+                            <div className="flex flex-col gap-1">
+                                <span>✨ Nova Tasca</span>
+                                {/* Afegim un petit avís visual perquè l'usuari s'adoni on va la tasca */}
+                                {sprintId && <span className="text-xs text-primary">Aquesta tasca s'afegirà a l'Sprint actiu</span>}
+                            </div>
+                        </ModalHeader>
                         <ModalBody className="gap-4">
                             <Input label="Títol" value={title} onValueChange={setTitle} isRequired variant="bordered" />
                             <Textarea label="Descripció" value={description} onValueChange={setDescription} variant="bordered" />

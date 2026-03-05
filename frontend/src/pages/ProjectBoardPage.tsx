@@ -104,9 +104,7 @@ export default function ProjectBoardPage() {
         if (confirm("Segur que vols esborrar aquest Sprint? Les tasques que contingui tornaran al Backlog.")) {
             try {
                 await sprintService.deleteSprint(id, sprintId);
-                // L'esborrem de la llista visual
                 setSprints(prev => prev.filter(s => s.id !== sprintId));
-                // I refresquem les tasques forçant el backend o simplement actualitzant l'estat local
                 setTasks(prev => prev.map(t => t.sprintId === sprintId ? { ...t, sprintId: null } : t));
             } catch (error) {
                 console.error("Error esborrant sprint", error);
@@ -136,9 +134,17 @@ export default function ProjectBoardPage() {
         const movedTaskId = Number(draggableId);
         const newStatus = destination.droppableId as TaskStatus;
         
+        const previousTasks = [...tasks];
+        
         setTasks(prev => prev.map(t => t.id === movedTaskId ? { ...t, status: newStatus } : t));
-        try { await taskService.updateStatus(movedTaskId, newStatus); } 
-        catch (error) { console.error("Error movent tasca", error); }
+        
+        try { 
+            await taskService.updateStatus(movedTaskId, newStatus); 
+        } catch (error: any) { 
+            console.error("Error movent tasca", error);
+            setTasks(previousTasks);
+            alert(error.response?.data?.message || "No pots moure aquesta tasca. Revisa les dependències.");
+        }
     };
 
     const onDragEndBacklog = async (result: DropResult) => {
@@ -239,7 +245,12 @@ export default function ProjectBoardPage() {
                                                                 <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
                                                                     className="bg-zinc-800 p-3 rounded-lg border border-white/10 flex justify-between items-center mb-2 hover:border-primary/50 cursor-grab"
                                                                     onClick={() => { setSelectedTask(task); onEditOpen(); }}>
-                                                                    <span className="text-sm text-white font-medium">{task.title}</span>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-sm text-white font-medium">{task.title}</span>
+                                                                        {task.links && task.links.length > 0 && (
+                                                                            <span className="text-xs opacity-50" title={`${task.links.length} enllaços`}>🔗</span>
+                                                                        )}
+                                                                    </div>
                                                                     <Chip size="sm" variant="flat">{task.status}</Chip>
                                                                 </div>
                                                             )}
@@ -272,7 +283,12 @@ export default function ProjectBoardPage() {
                                                             <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
                                                                 className="bg-zinc-800 p-3 rounded-lg border border-white/10 flex justify-between items-center mb-2 hover:border-primary/50 cursor-grab"
                                                                 onClick={() => { setSelectedTask(task); onEditOpen(); }}>
-                                                                <span className="text-sm text-white font-medium">{task.title}</span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-sm text-white font-medium">{task.title}</span>
+                                                                    {task.links && task.links.length > 0 && (
+                                                                        <span className="text-xs opacity-50" title={`${task.links.length} enllaços`}>🔗</span>
+                                                                    )}
+                                                                </div>
                                                                 <div className="flex gap-2 items-center">
                                                                     {task.assigneeName && <Chip size="sm" variant="dot" color="primary">{task.assigneeName}</Chip>}
                                                                     <Chip size="sm" variant="flat">{task.status}</Chip>
@@ -367,11 +383,21 @@ export default function ProjectBoardPage() {
                                                                             <CardHeader className="pb-0 text-white font-semibold text-sm">{task.title}</CardHeader>
                                                                             <CardBody className="pt-3 pb-3 text-xs">
                                                                                 <div className="flex justify-between items-center w-full mt-2">
-                                                                                    <div className="flex flex-wrap gap-1">
+                                                                                    <div className="flex flex-wrap gap-1 items-center">
                                                                                         <Chip size="sm" variant="flat" color={typeStyle?.color as any || "default"}>
                                                                                             {typeStyle?.icon} {typeStyle?.label}
                                                                                         </Chip>
-                                                                                        <Chip size="sm" variant="flat" color={priorityStyle?.color as any || "default"}>{priorityStyle?.icon}</Chip>
+                                                                                        <Chip size="sm" variant="flat" color={priorityStyle?.color as any || "default"}>
+                                                                                            {priorityStyle?.icon}
+                                                                                        </Chip>
+                                                                                        
+                                                                                        {/* --- INDICADOR D'ENLLAÇOS AL TAULELL KANBAN --- */}
+                                                                                        {task.links && task.links.length > 0 && (
+                                                                                            <span className="ml-1 text-[10px] text-default-400 font-bold bg-white/5 px-1.5 py-0.5 rounded-md" title={`${task.links.length} enllaços adjunts`}>
+                                                                                                🔗 {task.links.length}
+                                                                                            </span>
+                                                                                        )}
+
                                                                                     </div>
                                                                                     {finalNameToShow && (
                                                                                         <div title={finalNameToShow} className="w-7 h-7 rounded-full bg-primary/20 border border-primary text-primary flex items-center justify-center text-[11px] font-bold shadow-sm shrink-0 ml-2">
@@ -403,7 +429,7 @@ export default function ProjectBoardPage() {
                     </div>
                 )}
                 
-                <CreateTaskModal isOpen={isCreateOpen} onOpenChange={onCreateOpenChange} projectId={id!} onTaskCreated={(t) => setTasks([...tasks, t])} />
+                <CreateTaskModal isOpen={isCreateOpen} onOpenChange={onCreateOpenChange} projectId={id!} onTaskCreated={(t) => setTasks([...tasks, t])} sprintId={activeTab === "tablero" ? activeSprint?.id : null}/>                
                 <EditTaskModal isOpen={isEditOpen} onOpenChange={onEditOpenChange} task={selectedTask} projectId={id!} onTaskUpdated={(ut) => setTasks(tasks.map(t => t.id === ut.id ? ut : t))} onTaskDeleted={(tid) => setTasks(tasks.filter(t => t.id !== tid))} />
                 <InviteMemberModal isOpen={isInviteOpen} onOpenChange={onInviteOpenChange} projectId={id!} />
                 

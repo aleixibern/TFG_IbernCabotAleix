@@ -8,6 +8,13 @@ export const TaskStatus = {
 
 export type TaskStatus = typeof TaskStatus[keyof typeof TaskStatus];
 
+// Interfície auxiliar per les dependències
+export interface TaskDependency {
+    id: number;
+    title: string;
+    status: string;
+}
+
 export interface Task {
     id: number;
     title: string;
@@ -23,4 +30,19 @@ export interface Task {
     parentTaskId?: number;
     subtasks?: Task[];
     sprintId?: number | null;
+    links?: string[];
+    dependencies?: TaskDependency[]; 
+}
+
+export interface TaskRequest {
+    title: string;
+    description?: string;
+    type?: string;
+    priority?: string;
+    dueDate?: string;
+    assigneeEmail?: string;
+    parentTaskId?: number;
+    sprintId?: number;
+    links?: string[];
+    dependencyIds?: number[]; 
 }

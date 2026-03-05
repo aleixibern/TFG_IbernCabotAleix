@@ -13,6 +13,7 @@ import cat.tecnocampus.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -54,6 +55,17 @@ public class TaskService {
             task.setParentTask(parent);
         }
 
+        if (request.getDependencyIds() != null && !request.getDependencyIds().isEmpty()) {
+            List<Task> dependencies = taskRepository.findAllById(request.getDependencyIds());
+            task.setDependencies(dependencies);
+        }
+
+        if (request.getSprintId() != null) {
+            cat.tecnocampus.backend.domain.Sprint sprint = sprintRepository.findById(request.getSprintId())
+                    .orElseThrow(() -> new RuntimeException("Sprint no trobat"));
+            task.setSprint(sprint);
+        }
+
         return mapToResponse(taskRepository.save(task));
     }
 
@@ -77,7 +89,21 @@ public class TaskService {
             throw new RuntimeException("No tens permís per moure aquesta tasca");
         }
 
-        task.setStatus(cat.tecnocampus.backend.domain.TaskStatus.valueOf(status));
+        cat.tecnocampus.backend.domain.TaskStatus nouEstat = cat.tecnocampus.backend.domain.TaskStatus.valueOf(status);
+
+        if (nouEstat == cat.tecnocampus.backend.domain.TaskStatus.IN_PROGRESS ||
+                nouEstat == cat.tecnocampus.backend.domain.TaskStatus.IN_REVIEW ||
+                nouEstat == cat.tecnocampus.backend.domain.TaskStatus.DONE) {
+
+            boolean teDependenciesPendents = task.getDependencies().stream()
+                    .anyMatch(dep -> dep.getStatus() != cat.tecnocampus.backend.domain.TaskStatus.DONE);
+
+            if (teDependenciesPendents) {
+                throw new RuntimeException("No pots moure la tasca: falten dependències per completar.");
+            }
+        }
+
+        task.setStatus(nouEstat);
         Task savedTask = taskRepository.save(task);
         return mapToResponse(savedTask);
     }
@@ -94,6 +120,11 @@ public class TaskService {
 
         if (!isOwner && !isMember) {
             throw new RuntimeException("No tens permís per esborrar aquesta tasca");
+        }
+
+        for (Task dependentTask : task.getDependentTasks()) {
+            dependentTask.getDependencies().remove(task);
+            taskRepository.save(dependentTask);
         }
 
         taskRepository.delete(task);
@@ -114,6 +145,13 @@ public class TaskService {
                 .assigneeEmail(task.getAssignee() != null ? task.getAssignee().getEmail() : null)
                 .parentTaskId(task.getParentTask() != null ? task.getParentTask().getId() : null)
                 .sprintId(task.getSprint() != null ? task.getSprint().getId() : null)
+
+                .dependencies(task.getDependencies() != null ?
+                        task.getDependencies().stream()
+                                .map(dep -> new TaskResponse.DependencyDto(dep.getId(), dep.getTitle(), dep.getStatus().name()))
+                                .collect(Collectors.toList())
+                        : new ArrayList<>())
+
                 .subtasks(task.getSubtasks() != null ?
                         task.getSubtasks().stream().map(sub -> TaskResponse.builder()
                                 .id(sub.getId())
@@ -125,6 +163,7 @@ public class TaskService {
                         ).collect(java.util.stream.Collectors.toList()) : new java.util.ArrayList<>())
                 .build();
     }
+
     public TaskResponse updateTask(Long taskId, TaskRequest request, String userEmail) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Tasca no trobada"));
@@ -140,6 +179,11 @@ public class TaskService {
         if (request.getType() != null) task.setType(cat.tecnocampus.backend.domain.TaskType.valueOf(request.getType()));
         if (request.getPriority() != null) task.setPriority(cat.tecnocampus.backend.domain.TaskPriority.valueOf(request.getPriority()));
         if (request.getDueDate() != null) task.setDueDate(request.getDueDate());
+
+        if (request.getDependencyIds() != null) {
+            List<Task> newDependencies = taskRepository.findAllById(request.getDependencyIds());
+            task.setDependencies(newDependencies);
+        }
 
         if (request.getAssigneeEmail() != null) {
             if (request.getAssigneeEmail().trim().isEmpty() || request.getAssigneeEmail().equals("UNASSIGNED")) {

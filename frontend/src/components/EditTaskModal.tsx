@@ -32,6 +32,10 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
     const [assigneeEmail, setAssigneeEmail] = useState('');
     const [loading, setLoading] = useState(false);
 
+    // Estats Enllaços
+    const [links, setLinks] = useState<string[]>([]);
+    const [newLink, setNewLink] = useState('');
+
     // Estats Subtasques
     const [subtasks, setSubtasks] = useState<Task[]>([]);
     const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
@@ -42,8 +46,12 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
     const [newCommentText, setNewCommentText] = useState('');
     const [loadingComment, setLoadingComment] = useState(false);
 
+    // Estats Dependències
+    const [availableTasks, setAvailableTasks] = useState<Task[]>([]);
+    const [dependencyIds, setDependencyIds] = useState<Set<string>>(new Set());
+
     useEffect(() => {
-        if (task) {
+        if (task && isOpen) {
             setTitle(task.title);
             setDescription(task.description || '');
             setType(task.type || 'TASK');
@@ -51,9 +59,19 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
             setDueDate(task.dueDate || '');
             setAssigneeEmail(task.assigneeEmail || '');
             setSubtasks(task.subtasks || []);
+            setLinks(task.links || []);
+            
+            // Inicialitzar dependències marcades prèviament
+            if (task.dependencies) {
+                setDependencyIds(new Set(task.dependencies.map(d => d.id.toString())));
+            } else {
+                setDependencyIds(new Set());
+            }
+
             loadComments(task.id);
+            loadAvailableTasks(task.id);
         }
-    }, [task]);
+    }, [task, isOpen]);
 
     const loadComments = async (taskId: number) => {
         try {
@@ -64,17 +82,47 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
         }
     };
 
+    const loadAvailableTasks = async (currentTaskId: number) => {
+        try {
+            const allTasks = await taskService.getTasksByProject(projectId);
+            // Filtrem la tasca actual i les seves subtasques perquè no pugui dependre d'ella mateixa
+            const filteredTasks = allTasks.filter(t => t.id !== currentTaskId && t.parentTaskId !== currentTaskId);
+            setAvailableTasks(filteredTasks);
+        } catch (error) {
+            console.error("Error carregant tasques per a dependències", error);
+        }
+    };
+
+    const handleAddLink = () => {
+        if (!newLink.trim()) return;
+        if (!links.includes(newLink.trim())) {
+            setLinks([...links, newLink.trim()]);
+        }
+        setNewLink('');
+    };
+
+    const handleRemoveLink = (linkToRemove: string) => {
+        setLinks(links.filter(l => l !== linkToRemove));
+    };
+
     const handleUpdate = async (onClose: () => void) => {
         if (!task || !title) return;
         setLoading(true);
         try {
-            // --- CANVI CLAU: Si esborrem el correu, enviem "UNASSIGNED" ---
             const finalAssigneeEmail = assigneeEmail === '' ? 'UNASSIGNED' : assigneeEmail;
+            
+            // Convertim el Set de strings a un Array de numbers pel backend
+            const finalDependencyIds = Array.from(dependencyIds).map(id => Number(id));
 
             const updatedTask = await taskService.updateTask(task.id, {
-                title, description, type, priority, 
+                title, 
+                description, 
+                type, 
+                priority, 
                 dueDate: dueDate || undefined, 
-                assigneeEmail: finalAssigneeEmail 
+                assigneeEmail: finalAssigneeEmail,
+                links: links,
+                dependencyIds: finalDependencyIds // <-- Enviem els IDs de les dependències
             });
             onTaskUpdated(updatedTask);
             onClose();
@@ -190,6 +238,35 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
                             </div>
 
                             <Divider className="my-1" />
+
+                            {/* --- DEPENDÈNCIES --- */}
+                            <div className="flex flex-col gap-2">
+                                <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+                                    🔗 Depèn de...
+                                </h4>
+                                <Select 
+                                    label="Tasques bloquejants" 
+                                    placeholder="Aquesta tasca no es pot fer fins que..."
+                                    selectionMode="multiple" 
+                                    selectedKeys={dependencyIds} 
+                                    onSelectionChange={(keys) => setDependencyIds(new Set(Array.from(keys).map(String)))}
+                                    variant="bordered"
+                                >
+                                    {availableTasks.map((t) => (
+                                        <SelectItem key={t.id.toString()} textValue={t.title}>
+                                            <div className="flex justify-between items-center w-full">
+                                                <span>{t.title}</span>
+                                                <Chip size="sm" variant="flat" className="ml-2">{t.status}</Chip>
+                                            </div>
+                                        </SelectItem>
+                                    ))}
+                                </Select>
+                                {dependencyIds.size > 0 && (
+                                    <p className="text-xs text-warning">Aquesta tasca està bloquejada per {dependencyIds.size} tasca/ques més.</p>
+                                )}
+                            </div>
+
+                            <Divider className="my-1" />
                             
                             {/* SUBTASQUES */}
                             <div className="flex flex-col gap-2">
@@ -212,6 +289,38 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
                                 <div className="flex gap-2">
                                     <Input size="sm" placeholder="Nova subtasca..." value={newSubtaskTitle} onValueChange={setNewSubtaskTitle} variant="bordered" onKeyDown={(e) => e.key === 'Enter' && handleAddSubtask()} />
                                     <Button size="sm" color="secondary" variant="flat" onPress={handleAddSubtask} isLoading={loadingSubtask}>Afegir</Button>
+                                </div>
+                            </div>
+
+                            <Divider className="my-1" />
+
+                            {/* --- SECCIÓ D'ENLLAÇOS ADJUNTS --- */}
+                            <div className="flex flex-col gap-2">
+                                <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+                                    📎 Enllaços Adjunts <Chip size="sm" variant="flat" color="warning">{links.length}</Chip>
+                                </h4>
+                                {links.length > 0 && (
+                                    <div className="flex flex-col gap-2 mb-2">
+                                        {links.map((link, index) => (
+                                            <div key={index} className="flex justify-between items-center bg-zinc-900/50 p-2 rounded-lg border border-white/5">
+                                                <a href={link.startsWith('http') ? link : `https://${link}`} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline truncate flex-1 mr-2">
+                                                    {link}
+                                                </a>
+                                                <Button isIconOnly size="sm" variant="light" color="danger" onPress={() => handleRemoveLink(link)}>✕</Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                <div className="flex gap-2">
+                                    <Input 
+                                        size="sm" 
+                                        placeholder="Afegir link (GitHub, Figma, etc...)" 
+                                        value={newLink} 
+                                        onValueChange={setNewLink} 
+                                        variant="bordered" 
+                                        onKeyDown={(e) => e.key === 'Enter' && handleAddLink()} 
+                                    />
+                                    <Button size="sm" color="warning" variant="flat" onPress={handleAddLink}>+ Link</Button>
                                 </div>
                             </div>
 
@@ -258,7 +367,6 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
                                     </Button>
                                 </div>
                             </div>
-                            {/* ------------------------- */}
 
                         </ModalBody>
                         <ModalFooter className="flex justify-between border-t border-white/10 pt-4 mt-2">

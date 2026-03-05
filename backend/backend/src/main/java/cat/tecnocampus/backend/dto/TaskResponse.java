@@ -23,4 +23,13 @@ public class TaskResponse {
     private List<TaskResponse> subtasks;
     private Long sprintId;
     private List<String> links;
+    private List<DependencyDto> dependencies;
+
+    @Data
+    @AllArgsConstructor
+    public static class DependencyDto {
+        private Long id;
+        private String title;
+        private String status;
+    }
 }
