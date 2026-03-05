@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Spinner, Button, Card, CardHeader, CardBody, Chip, useDisclosure, Select, SelectItem, Tabs, Tab } from "@heroui/react";
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
+import { useTranslation } from 'react-i18next'; // <-- AFEGIT
 import api from '../api/axios';
 import { taskService } from '../services/taskService';
 import { sprintService } from '../services/sprintService';
@@ -17,18 +18,19 @@ import { CreateSprintModal } from '../components/CreateSprintModal';
 import { getInitials } from '../utils/stringUtils';
 import { ProjectAnalytics } from '../components/ProjectAnalytics';
 
-const COLUMNS = [
-    { id: TaskStatus.BACKLOG, title: "Backlog 💡", color: "default" },
-    { id: TaskStatus.READY, title: "Ready 🔥", color: "secondary" },
-    { id: TaskStatus.IN_PROGRESS, title: "In Progress 🚀", color: "primary" },
-    { id: TaskStatus.IN_REVIEW, title: "In Review 👀", color: "warning" },
-    { id: TaskStatus.DONE, title: "Done ✅", color: "success" }
+// Movut fora de l'estat però s'utilitzarà amb t() a dins
+const COLUMNS_KEYS = [
+    { id: TaskStatus.BACKLOG, titleKey: "column_backlog", color: "default" },
+    { id: TaskStatus.READY, titleKey: "column_ready", color: "secondary" },
+    { id: TaskStatus.IN_PROGRESS, titleKey: "column_in_progress", color: "primary" },
+    { id: TaskStatus.IN_REVIEW, titleKey: "column_in_review", color: "warning" },
+    { id: TaskStatus.DONE, titleKey: "column_done", color: "success" }
 ];
 
 const TYPE_STYLES = {
-    TASK: { icon: "📝", color: "primary", label: "Tasca" },
-    FEATURE: { icon: "🚀", color: "secondary", label: "Feature" },
-    BUG: { icon: "🐛", color: "danger", label: "Bug" }
+    TASK: { icon: "📝", color: "primary", labelKey: "type_task" },
+    FEATURE: { icon: "🚀", color: "secondary", labelKey: "type_feature" },
+    BUG: { icon: "🐛", color: "danger", labelKey: "type_bug" }
 };
 
 const PRIORITY_STYLES = {
@@ -41,6 +43,7 @@ const PRIORITY_STYLES = {
 export default function ProjectBoardPage() {
     const { id } = useParams(); 
     const navigate = useNavigate();
+    const { t } = useTranslation(); // <-- AFEGIT
     
     const { isOpen: isCreateOpen, onOpen: onCreateOpen, onOpenChange: onCreateOpenChange } = useDisclosure();
     const { isOpen: isEditOpen, onOpen: onEditOpen, onOpenChange: onEditOpenChange } = useDisclosure();
@@ -93,7 +96,7 @@ export default function ProjectBoardPage() {
             setSprints(prevSprints => prevSprints.map(s => s.id === sprintId ? updatedSprint : s));
             setActiveTab("tablero");
         } catch (error: any) {
-            alert(error.response?.data?.message || "No s'ha pogut iniciar l'sprint.");
+            alert(error.response?.data?.message || t('error_start_sprint'));
         } finally {
             setStartingSprint(null);
         }
@@ -101,26 +104,26 @@ export default function ProjectBoardPage() {
 
     const handleDeleteSprint = async (sprintId: number) => {
         if (!id) return;
-        if (confirm("Segur que vols esborrar aquest Sprint? Les tasques que contingui tornaran al Backlog.")) {
+        if (confirm(t('confirm_delete_sprint'))) {
             try {
                 await sprintService.deleteSprint(id, sprintId);
                 setSprints(prev => prev.filter(s => s.id !== sprintId));
                 setTasks(prev => prev.map(t => t.sprintId === sprintId ? { ...t, sprintId: null } : t));
             } catch (error) {
                 console.error("Error esborrant sprint", error);
-                alert("No s'ha pogut esborrar l'sprint.");
+                alert(t('error_delete_sprint'));
             }
         }
     };
 
     const handleCompleteSprint = async (sprintId: number) => {
         if (!id) return;
-        if (confirm("Segur que vols completar aquest Sprint? Les tasques no esborrades es quedaran on estan.")) {
+        if (confirm(t('confirm_complete_sprint'))) {
             try {
                 const updatedSprint = await sprintService.completeSprint(id, sprintId);
                 setSprints(prev => prev.map(s => s.id === sprintId ? updatedSprint : s));
                 setActiveTab("backlog");
-                alert("Sprint completat amb èxit! 🎉");
+                alert(t('success_complete_sprint'));
             } catch (error) {
                 console.error("Error completant sprint", error);
             }
@@ -143,7 +146,7 @@ export default function ProjectBoardPage() {
         } catch (error: any) { 
             console.error("Error movent tasca", error);
             setTasks(previousTasks);
-            alert(error.response?.data?.message || "No pots moure aquesta tasca. Revisa les dependències.");
+            alert(error.response?.data?.message || t('error_move_task'));
         }
     };
 
@@ -170,13 +173,13 @@ export default function ProjectBoardPage() {
         return matchSprint && matchType && matchAssignee;
     });
 
-    if (loading) return <div className="flex h-screen items-center justify-center bg-black"><Spinner size="lg" /></div>;
+    if (loading) return <div className="flex h-screen items-center justify-center bg-background"><Spinner size="lg" /></div>;
 
     return (
         <MainLayout username={user?.username} email={user?.email}>
             <div className="flex flex-col h-full gap-5">
                 
-                <div className="flex justify-between items-center px-2 text-white">
+                <div className="flex justify-between items-center px-2 text-foreground">
                     <div>
                         <h1 className="text-3xl font-bold">{project?.title}</h1>
                         <div className="flex gap-2 items-center text-default-500">
@@ -185,22 +188,22 @@ export default function ProjectBoardPage() {
                         </div>
                     </div>
                     <div className="flex gap-3">
-                        <Button color="secondary" variant="flat" onPress={onInviteOpen}>👥 Convidar</Button>
-                        <Button color="primary" variant="shadow" onPress={onCreateOpen}>+ Nova Tasca</Button>
+                        <Button color="secondary" variant="flat" onPress={onInviteOpen}>👥 {t('invite_button')}</Button>
+                        <Button color="primary" variant="shadow" onPress={onCreateOpen}>{t('new_task_button')}</Button>
                     </div>
                 </div>
 
                 <div className="px-2">
                     <Tabs selectedKey={activeTab} onSelectionChange={(key) => setActiveTab(key as string)} color="primary" variant="underlined"
                         classNames={{
-                            tabList: "gap-6 w-full relative rounded-none p-0 border-b border-white/10",
+                            tabList: "gap-6 w-full relative rounded-none p-0 border-b border-divider",
                             cursor: "w-full bg-primary",
                             tab: "max-w-fit px-0 h-12 text-default-500",
-                            tabContent: "group-data-[selected=true]:text-white font-semibold"
+                            tabContent: "group-data-[selected=true]:text-foreground font-semibold"
                         }}>
-                        <Tab key="backlog" title={<div className="flex items-center space-x-2"><span>📚 Backlog & Planificació</span></div>} />
-                        <Tab key="tablero" title={<div className="flex items-center space-x-2"><span>🚀 Tablero Actiu</span></div>} />
-                        <Tab key="estadistiques" title={<div className="flex items-center space-x-2"><span>📊 Estadístiques</span></div>} />
+                        <Tab key="backlog" title={<div className="flex items-center space-x-2"><span>📚 {t('tab_backlog')}</span></div>} />
+                        <Tab key="tablero" title={<div className="flex items-center space-x-2"><span>🚀 {t('tab_board')}</span></div>} />
+                        <Tab key="estadistiques" title={<div className="flex items-center space-x-2"><span>📊 {t('tab_stats')}</span></div>} />
                     </Tabs>
                 </div>
 
@@ -209,16 +212,16 @@ export default function ProjectBoardPage() {
                         <div className="flex flex-col gap-6 p-2 pb-10 h-[calc(100vh-250px)] overflow-y-auto">
                             
                             <div className="flex justify-between items-center">
-                                <h2 className="text-xl font-bold text-white">Sprints Planificats</h2>
-                                <Button color="warning" variant="flat" size="sm" onPress={onSprintOpen}>+ Nou Sprint</Button>
+                                <h2 className="text-xl font-bold text-foreground">{t('planned_sprints')}</h2>
+                                <Button color="warning" variant="flat" size="sm" onPress={onSprintOpen}>{t('new_sprint_button')}</Button>
                             </div>
 
                             <div className="flex flex-col gap-4">
                                 {sprints.filter(s => s.status !== 'CLOSED').map(sprint => (
-                                    <div key={sprint.id} className="bg-zinc-900 border border-white/10 rounded-xl p-4 flex flex-col gap-3">
+                                    <div key={sprint.id} className="bg-content1 border border-divider rounded-xl p-4 flex flex-col gap-3 shadow-sm">
                                         <div className="flex justify-between items-center w-full">
                                             <div className="flex items-center gap-3">
-                                                <h4 className="text-white font-bold text-lg">⏱️ {sprint.name}</h4>
+                                                <h4 className="text-foreground font-bold text-lg">⏱️ {sprint.name}</h4>
                                                 <Chip size="sm" color={sprint.status === 'ACTIVE' ? 'success' : 'warning'} variant="flat">{sprint.status}</Chip>
                                                 <span className="text-xs text-default-400">
                                                     {new Date(sprint.startDate).toLocaleDateString()} - {new Date(sprint.endDate).toLocaleDateString()}
@@ -227,10 +230,10 @@ export default function ProjectBoardPage() {
                                             <div className="flex items-center gap-2">
                                                 {sprint.status === 'PLANNED' && (
                                                     <Button size="sm" color="primary" variant="flat" isLoading={startingSprint === sprint.id} onPress={() => handleStartSprint(sprint.id)}>
-                                                        Iniciar Sprint
+                                                        {t('start_sprint_button')}
                                                     </Button>
                                                 )}
-                                                <Button size="sm" color="danger" variant="light" isIconOnly onPress={() => handleDeleteSprint(sprint.id)} title="Esborrar Sprint">
+                                                <Button size="sm" color="danger" variant="light" isIconOnly onPress={() => handleDeleteSprint(sprint.id)} title={t('delete_sprint_tooltip')}>
                                                     🗑️
                                                 </Button>
                                             </div>
@@ -238,15 +241,15 @@ export default function ProjectBoardPage() {
                                         
                                         <Droppable droppableId={`sprint-${sprint.id}`}>
                                             {(provided) => (
-                                                <div ref={provided.innerRef} {...provided.droppableProps} className="min-h-[60px] bg-black/50 p-3 rounded-lg border border-white/5 border-dashed">
+                                                <div ref={provided.innerRef} {...provided.droppableProps} className="min-h-[60px] bg-default-50 p-3 rounded-lg border border-divider border-dashed">
                                                     {tasks.filter(t => t.sprintId === sprint.id).map((task, index) => (
                                                         <Draggable key={`sp-${task.id}`} draggableId={task.id.toString()} index={index}>
                                                             {(provided) => (
                                                                 <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
-                                                                    className="bg-zinc-800 p-3 rounded-lg border border-white/10 flex justify-between items-center mb-2 hover:border-primary/50 cursor-grab"
+                                                                    className="bg-content2 p-3 rounded-lg border border-divider flex justify-between items-center mb-2 hover:border-primary/50 cursor-grab shadow-sm"
                                                                     onClick={() => { setSelectedTask(task); onEditOpen(); }}>
                                                                     <div className="flex items-center gap-2">
-                                                                        <span className="text-sm text-white font-medium">{task.title}</span>
+                                                                        <span className="text-sm text-foreground font-medium">{task.title}</span>
                                                                         {task.links && task.links.length > 0 && (
                                                                             <span className="text-xs opacity-50" title={`${task.links.length} enllaços`}>🔗</span>
                                                                         )}
@@ -258,7 +261,7 @@ export default function ProjectBoardPage() {
                                                     ))}
                                                     {provided.placeholder}
                                                     {tasks.filter(t => t.sprintId === sprint.id).length === 0 && (
-                                                        <p className="text-center text-default-500 text-sm py-2">Arrossega tasques aquí per planificar-les</p>
+                                                        <p className="text-center text-default-500 text-sm py-2">{t('drag_tasks_here')}</p>
                                                     )}
                                                 </div>
                                             )}
@@ -268,7 +271,7 @@ export default function ProjectBoardPage() {
                             </div>
 
                             <div className="mt-4">
-                                <h2 className="text-xl font-bold text-white mb-4">Tasques sense assignar (Backlog)</h2>
+                                <h2 className="text-xl font-bold text-foreground mb-4">{t('unassigned_tasks')}</h2>
                                 <Droppable droppableId="backlog">
                                     {(provided) => {
                                         const backlogTasks = tasks.filter(t => 
@@ -276,15 +279,15 @@ export default function ProjectBoardPage() {
                                         );
 
                                         return (
-                                            <div ref={provided.innerRef} {...provided.droppableProps} className="bg-zinc-900 border border-white/10 rounded-xl p-4 min-h-[150px]">
+                                            <div ref={provided.innerRef} {...provided.droppableProps} className="bg-content1 border border-divider rounded-xl p-4 min-h-[150px] shadow-sm">
                                                 {backlogTasks.map((task, index) => (
                                                     <Draggable key={`bl-${task.id}`} draggableId={task.id.toString()} index={index}>
                                                         {(provided) => (
                                                             <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
-                                                                className="bg-zinc-800 p-3 rounded-lg border border-white/10 flex justify-between items-center mb-2 hover:border-primary/50 cursor-grab"
+                                                                className="bg-content2 p-3 rounded-lg border border-divider flex justify-between items-center mb-2 hover:border-primary/50 cursor-grab shadow-sm"
                                                                 onClick={() => { setSelectedTask(task); onEditOpen(); }}>
                                                                 <div className="flex items-center gap-2">
-                                                                    <span className="text-sm text-white font-medium">{task.title}</span>
+                                                                    <span className="text-sm text-foreground font-medium">{task.title}</span>
                                                                     {task.links && task.links.length > 0 && (
                                                                         <span className="text-xs opacity-50" title={`${task.links.length} enllaços`}>🔗</span>
                                                                     )}
@@ -299,7 +302,7 @@ export default function ProjectBoardPage() {
                                                 ))}
                                                 {provided.placeholder}
                                                 {backlogTasks.length === 0 && (
-                                                    <p className="text-center text-default-500 text-sm italic py-4">No hi ha tasques al Backlog.</p>
+                                                    <p className="text-center text-default-500 text-sm italic py-4">{t('empty_backlog')}</p>
                                                 )}
                                             </div>
                                         );
@@ -319,49 +322,49 @@ export default function ProjectBoardPage() {
                                     <div className="flex items-center gap-3">
                                         <span className="text-xl">🚀</span>
                                         <div>
-                                            <h3 className="font-bold text-lg">Sprint Actiu: {activeSprint.name}</h3>
+                                            <h3 className="font-bold text-lg">{t('active_sprint')} {activeSprint.name}</h3>
                                             <p className="text-xs opacity-80">
                                                 {new Date(activeSprint.startDate).toLocaleDateString()} - {new Date(activeSprint.endDate).toLocaleDateString()}
                                             </p>
                                         </div>
                                     </div>
                                     <Button size="sm" color="success" variant="flat" className="font-bold" onPress={() => handleCompleteSprint(activeSprint.id)}>
-                                        ✅ Completar Sprint
+                                        {t('complete_sprint_button')}
                                     </Button>
                                 </div>
                             ) : (
-                                <div className="bg-zinc-900/80 border border-white/5 text-default-500 px-4 py-3 rounded-xl flex items-center gap-3">
-                                    <span>ℹ️</span><p className="text-sm">No hi ha cap Sprint actiu actualment. Pots iniciar-ne un des de la pestanya Backlog.</p>
+                                <div className="bg-content2/80 border border-divider text-default-500 px-4 py-3 rounded-xl flex items-center gap-3 shadow-sm">
+                                    <span>ℹ️</span><p className="text-sm">{t('no_active_sprint')}</p>
                                 </div>
                             )}
                         </div>
 
-                        <div className="flex gap-4 items-center bg-zinc-900/50 p-4 rounded-xl border border-white/10 shrink-0 mx-2">
-                            <span className="text-white font-bold text-sm">🔍 Filtres:</span>
-                            <Select label="Tipus" selectedKeys={[filterType]} onChange={(e) => setFilterType(e.target.value)} size="sm" className="w-32" variant="bordered">
-                                <SelectItem key="ALL">Tots</SelectItem>
-                                <SelectItem key="TASK">📝 Tasca</SelectItem>
-                                <SelectItem key="FEATURE">🚀 Feature</SelectItem>
-                                <SelectItem key="BUG">🐛 Bug</SelectItem>
+                        <div className="flex gap-4 items-center bg-content1 p-4 rounded-xl border border-divider shrink-0 mx-2 shadow-sm">
+                            <span className="text-foreground font-bold text-sm">{t('filters_label')}</span>
+                            <Select label={t('filter_type')} selectedKeys={[filterType]} onChange={(e) => setFilterType(e.target.value)} size="sm" className="w-32" variant="bordered">
+                                <SelectItem key="ALL">{t('filter_all')}</SelectItem>
+                                <SelectItem key="TASK">📝 {t('type_task')}</SelectItem>
+                                <SelectItem key="FEATURE">🚀 {t('type_feature')}</SelectItem>
+                                <SelectItem key="BUG">🐛 {t('type_bug')}</SelectItem>
                             </Select>
-                            <Select label="Assignat a" selectedKeys={[filterAssignee]} onChange={(e) => setFilterAssignee(e.target.value)} size="sm" className="w-48" variant="bordered">
+                            <Select label={t('filter_assignee')} selectedKeys={[filterAssignee]} onChange={(e) => setFilterAssignee(e.target.value)} size="sm" className="w-48" variant="bordered">
                                 {["ALL", ...uniqueAssignees].map((email) => (
-                                    <SelectItem key={email as string}>{email === "ALL" ? "Tothom" : (email as string)}</SelectItem>
+                                    <SelectItem key={email as string}>{email === "ALL" ? t('filter_everyone') : (email as string)}</SelectItem>
                                 ))}
                             </Select>
                             {(filterType !== "ALL" || filterAssignee !== "ALL") && (
-                                <Button size="sm" color="danger" variant="flat" onPress={() => { setFilterType("ALL"); setFilterAssignee("ALL"); }}>Netejar</Button>
+                                <Button size="sm" color="danger" variant="flat" onPress={() => { setFilterType("ALL"); setFilterAssignee("ALL"); }}>{t('clear_filters')}</Button>
                             )}
                         </div>
 
                         <DragDropContext onDragEnd={onDragEndTablero}>
                             <div className="flex gap-4 overflow-x-auto pb-4 h-[calc(100vh-340px)] px-2">
-                                {COLUMNS.map((column) => (
+                                {COLUMNS_KEYS.map((column) => (
                                     <Droppable key={column.id} droppableId={column.id}>
                                         {(provided) => (
-                                            <div ref={provided.innerRef} {...provided.droppableProps} className="min-w-[280px] w-full bg-zinc-900/50 rounded-xl border border-white/5 flex flex-col">
-                                                <div className="p-4 border-b border-white/5 flex justify-between items-center bg-zinc-900/90 rounded-t-xl">
-                                                    <h3 className="font-bold text-white">{column.title}</h3>
+                                            <div ref={provided.innerRef} {...provided.droppableProps} className="min-w-[280px] w-full bg-default-50/50 rounded-xl border border-divider flex flex-col shadow-sm">
+                                                <div className="p-4 border-b border-divider flex justify-between items-center bg-content2 rounded-t-xl">
+                                                    <h3 className="font-bold text-foreground">{t(column.titleKey)}</h3>
                                                     <Chip size="sm" variant="flat" color={column.color as any}>
                                                         {tableroTasks.filter(t => t.status === column.id).length}
                                                     </Chip>
@@ -379,25 +382,23 @@ export default function ProjectBoardPage() {
                                                                 {(provided) => (
                                                                     <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
                                                                          onClick={() => { setSelectedTask(task); onEditOpen(); }}>
-                                                                        <Card className="bg-zinc-800 border border-white/10 hover:border-primary/50 cursor-grab">
-                                                                            <CardHeader className="pb-0 text-white font-semibold text-sm">{task.title}</CardHeader>
+                                                                        <Card className="bg-content1 border border-divider hover:border-primary/50 cursor-grab shadow-sm">
+                                                                            <CardHeader className="pb-0 text-foreground font-semibold text-sm">{task.title}</CardHeader>
                                                                             <CardBody className="pt-3 pb-3 text-xs">
                                                                                 <div className="flex justify-between items-center w-full mt-2">
                                                                                     <div className="flex flex-wrap gap-1 items-center">
                                                                                         <Chip size="sm" variant="flat" color={typeStyle?.color as any || "default"}>
-                                                                                            {typeStyle?.icon} {typeStyle?.label}
+                                                                                            {typeStyle?.icon} {t(typeStyle?.labelKey)}
                                                                                         </Chip>
                                                                                         <Chip size="sm" variant="flat" color={priorityStyle?.color as any || "default"}>
                                                                                             {priorityStyle?.icon}
                                                                                         </Chip>
                                                                                         
-                                                                                        {/* --- INDICADOR D'ENLLAÇOS AL TAULELL KANBAN --- */}
                                                                                         {task.links && task.links.length > 0 && (
-                                                                                            <span className="ml-1 text-[10px] text-default-400 font-bold bg-white/5 px-1.5 py-0.5 rounded-md" title={`${task.links.length} enllaços adjunts`}>
+                                                                                            <span className="ml-1 text-[10px] text-default-400 font-bold bg-default-100 px-1.5 py-0.5 rounded-md" title={`${task.links.length} enllaços adjunts`}>
                                                                                                 🔗 {task.links.length}
                                                                                             </span>
                                                                                         )}
-
                                                                                     </div>
                                                                                     {finalNameToShow && (
                                                                                         <div title={finalNameToShow} className="w-7 h-7 rounded-full bg-primary/20 border border-primary text-primary flex items-center justify-center text-[11px] font-bold shadow-sm shrink-0 ml-2">
