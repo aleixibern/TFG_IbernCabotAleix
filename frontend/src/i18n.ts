@@ -66,7 +66,56 @@ const resources = {
       // Project Board - Etiquetes
       "type_task": "Tasca",
       "type_feature": "Feature",
-      "type_bug": "Bug"
+      "type_bug": "Bug",
+
+      // Estadístiques
+      "unassigned": "Sense assignar",
+      "no_data_stats": "No hi ha prou dades per generar estadístiques. Crea algunes tasques primer!",
+      "global_status": "Estat Global del Projecte",
+      "status_distribution": "Distribució de les {{count}} tasques per columna",
+      "workload_per_member": "Càrrega de Treball per Membre",
+      "tasks_assigned_to_user": "Tasques assignades a cada usuari",
+
+      // Create Task Modal
+      "new_task_modal_title": "Nova Tasca",
+      "task_added_to_active_sprint": "Aquesta tasca s'afegirà a l'Sprint actiu",
+      "task_title": "Títol",
+      "task_description": "Descripció",
+      "task_priority": "Prioritat",
+      "priority_low": "Baixa",
+      "priority_medium": "Mitjana",
+      "priority_high": "Alta",
+      "priority_urgent": "Urgent",
+      "task_due_date": "Data Límit",
+      "task_assignee": "Assignar a (Email)",
+      "cancel": "Cancel·lar",
+      "create_task_btn": "Crear Tasca",
+      "error_create_task": "Error en crear la tasca. Revisa les dades.",
+
+      // Edit Task Modal
+      "edit_task_title": "Editar Tasca",
+      "confirm_delete_task": "Segur que vols esborrar aquesta tasca? (S'esborraran també les subtasques i comentaris)",
+      "confirm_delete_subtask": "Esborrar aquesta subtasca?",
+      "assignee_placeholder": "Deixa-ho buit per desassignar",
+      "depends_on": "Depèn de...",
+      "blocking_tasks": "Tasques bloquejants",
+      "blocking_tasks_placeholder": "Aquesta tasca no es pot fer fins que...",
+      "task_blocked_by": "Aquesta tasca està bloquejada per {{count}} tasca/ques més.",
+      "subtasks": "Subtasques",
+      "new_subtask_placeholder": "Nova subtasca...",
+      "add": "Afegir",
+      "attached_links": "Enllaços Adjunts",
+      "add_link_placeholder": "Afegir link (GitHub, Figma, etc...)",
+      "comments": "Comentaris",
+      "no_comments": "Cap comentari encara. Trenca el gel!",
+      "write_comment_placeholder": "Escriu un comentari...",
+      "send": "Enviar",
+      "delete_task_btn": "Esborrar Tasca",
+      "save_changes_btn": "Guardar Canvis",
+
+      "confirm_delete_project": "Estàs segur que vols esborrar el projecte",
+      "delete_project_tooltip": "Esborrar Projecte",
+      "view_details": "Veure Detalls"
     }
   },
   es: {
@@ -133,7 +182,56 @@ const resources = {
       // Project Board - Etiquetas
       "type_task": "Tarea",
       "type_feature": "Feature",
-      "type_bug": "Bug"
+      "type_bug": "Bug",
+
+      // Estadísticas
+      "unassigned": "Sin asignar",
+      "no_data_stats": "¡No hay suficientes datos para generar estadísticas. Crea algunas tareas primero!",
+      "global_status": "Estado Global del Proyecto",
+      "status_distribution": "Distribución de las {{count}} tareas por columna",
+      "workload_per_member": "Carga de Trabajo por Miembro",
+      "tasks_assigned_to_user": "Tareas asignadas a cada usuario",
+
+      // Create Task Modal
+      "new_task_modal_title": "Nueva Tarea",
+      "task_added_to_active_sprint": "Esta tarea se añadirá al Sprint activo",
+      "task_title": "Título",
+      "task_description": "Descripción",
+      "task_priority": "Prioridad",
+      "priority_low": "Baja",
+      "priority_medium": "Media",
+      "priority_high": "Alta",
+      "priority_urgent": "Urgente",
+      "task_due_date": "Fecha Límite",
+      "task_assignee": "Asignar a (Email)",
+      "cancel": "Cancelar",
+      "create_task_btn": "Crear Tarea",
+      "error_create_task": "Error al crear la tarea. Revisa los datos.",
+
+      // Edit Task Modal
+      "edit_task_title": "Editar Tarea",
+      "confirm_delete_task": "¿Seguro que quieres borrar esta tarea? (Se borrarán también las subtareas y comentarios)",
+      "confirm_delete_subtask": "¿Borrar esta subtarea?",
+      "assignee_placeholder": "Déjalo vacío para desasignar",
+      "depends_on": "Depende de...",
+      "blocking_tasks": "Tareas bloqueantes",
+      "blocking_tasks_placeholder": "Esta tarea no se puede hacer hasta que...",
+      "task_blocked_by": "Esta tarea está bloqueada por {{count}} tarea/s más.",
+      "subtasks": "Subtareas",
+      "new_subtask_placeholder": "Nueva subtarea...",
+      "add": "Añadir",
+      "attached_links": "Enlaces Adjuntos",
+      "add_link_placeholder": "Añadir link (GitHub, Figma, etc...)",
+      "comments": "Comentarios",
+      "no_comments": "Ningún comentario todavía. ¡Rompe el hielo!",
+      "write_comment_placeholder": "Escribe un comentario...",
+      "send": "Enviar",
+      "delete_task_btn": "Borrar Tarea",
+      "save_changes_btn": "Guardar Cambios",
+
+      "confirm_delete_project": "¿Estás seguro que quieres borrar el proyecto",
+      "delete_project_tooltip": "Borrar Proyecto",
+      "view_details": "Ver Detalles"
     }
   },
   en: {
@@ -200,7 +298,56 @@ const resources = {
       // Project Board - Tags
       "type_task": "Task",
       "type_feature": "Feature",
-      "type_bug": "Bug"
+      "type_bug": "Bug",
+
+      // Statistics
+      "unassigned": "Unassigned",
+      "no_data_stats": "Not enough data to generate statistics. Create some tasks first!",
+      "global_status": "Overall Project Status",
+      "status_distribution": "Distribution of {{count}} tasks per column",
+      "workload_per_member": "Workload per Member",
+      "tasks_assigned_to_user": "Tasks assigned to each user",
+
+      // Create Task Modal
+      "new_task_modal_title": "New Task",
+      "task_added_to_active_sprint": "This task will be added to the active Sprint",
+      "task_title": "Title",
+      "task_description": "Description",
+      "task_priority": "Priority",
+      "priority_low": "Low",
+      "priority_medium": "Medium",
+      "priority_high": "High",
+      "priority_urgent": "Urgent",
+      "task_due_date": "Due Date",
+      "task_assignee": "Assignee (Email)",
+      "cancel": "Cancel",
+      "create_task_btn": "Create Task",
+      "error_create_task": "Error creating task. Check the data.",
+
+      // Edit Task Modal
+      "edit_task_title": "Edit Task",
+      "confirm_delete_task": "Are you sure you want to delete this task? (Subtasks and comments will also be deleted)",
+      "confirm_delete_subtask": "Delete this subtask?",
+      "assignee_placeholder": "Leave empty to unassign",
+      "depends_on": "Depends on...",
+      "blocking_tasks": "Blocking tasks",
+      "blocking_tasks_placeholder": "This task cannot be done until...",
+      "task_blocked_by": "This task is blocked by {{count}} other task/s.",
+      "subtasks": "Subtasks",
+      "new_subtask_placeholder": "New subtask...",
+      "add": "Add",
+      "attached_links": "Attached Links",
+      "add_link_placeholder": "Add link (GitHub, Figma, etc...)",
+      "comments": "Comments",
+      "no_comments": "No comments yet. Break the ice!",
+      "write_comment_placeholder": "Write a comment...",
+      "send": "Send",
+      "delete_task_btn": "Delete Task",
+      "save_changes_btn": "Save Changes",
+
+      "confirm_delete_project": "Are you sure you want to delete the project",
+      "delete_project_tooltip": "Delete Project",
+      "view_details": "View Details"
     }
   }
 };

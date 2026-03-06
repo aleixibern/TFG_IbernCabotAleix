@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input, Textarea, Select, SelectItem, Divider, Checkbox, Chip } from "@heroui/react";
+import { useTranslation } from 'react-i18next'; // <-- AFEGIT
 import { taskService } from '../services/taskService';
 import { commentService } from '../services/commentService';
 import type { Task } from '../types/Task';
@@ -24,6 +25,8 @@ const getInitials = (name?: string) => {
 };
 
 export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpdated, onTaskDeleted }: Props) => {
+    const { t } = useTranslation(); // <-- AFEGIT
+
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [type, setType] = useState('TASK');
@@ -61,7 +64,6 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
             setSubtasks(task.subtasks || []);
             setLinks(task.links || []);
             
-            // Inicialitzar dependències marcades prèviament
             if (task.dependencies) {
                 setDependencyIds(new Set(task.dependencies.map(d => d.id.toString())));
             } else {
@@ -85,7 +87,6 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
     const loadAvailableTasks = async (currentTaskId: number) => {
         try {
             const allTasks = await taskService.getTasksByProject(projectId);
-            // Filtrem la tasca actual i les seves subtasques perquè no pugui dependre d'ella mateixa
             const filteredTasks = allTasks.filter(t => t.id !== currentTaskId && t.parentTaskId !== currentTaskId);
             setAvailableTasks(filteredTasks);
         } catch (error) {
@@ -110,8 +111,6 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
         setLoading(true);
         try {
             const finalAssigneeEmail = assigneeEmail === '' ? 'UNASSIGNED' : assigneeEmail;
-            
-            // Convertim el Set de strings a un Array de numbers pel backend
             const finalDependencyIds = Array.from(dependencyIds).map(id => Number(id));
 
             const updatedTask = await taskService.updateTask(task.id, {
@@ -122,7 +121,7 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
                 dueDate: dueDate || undefined, 
                 assigneeEmail: finalAssigneeEmail,
                 links: links,
-                dependencyIds: finalDependencyIds // <-- Enviem els IDs de les dependències
+                dependencyIds: finalDependencyIds 
             });
             onTaskUpdated(updatedTask);
             onClose();
@@ -135,7 +134,7 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
 
     const handleDelete = async (onClose: () => void) => {
         if (!task) return;
-        if (confirm("Segur que vols esborrar aquesta tasca? (S'esborraran també les subtasques i comentaris)")) {
+        if (confirm(t('confirm_delete_task'))) {
             setLoading(true);
             try {
                 await taskService.deleteTask(task.id);
@@ -180,7 +179,7 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
 
     const handleDeleteSubtask = async (subtaskId: number) => {
         if (!task) return;
-        if (confirm("Esborrar aquesta subtasca?")) {
+        if (confirm(t('confirm_delete_subtask'))) {
             try {
                 await taskService.deleteTask(subtaskId);
                 const updatedList = subtasks.filter(st => st.id !== subtaskId);
@@ -209,48 +208,80 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
     if (!task) return null;
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="blur" size="2xl" scrollBehavior="inside">
+        <Modal 
+            isOpen={isOpen} 
+            onOpenChange={onOpenChange} 
+            backdrop="blur" 
+            size="2xl" 
+            scrollBehavior="inside"
+            classNames={{
+                base: "bg-content1 text-foreground border border-divider shadow-lg",
+                header: "border-b border-divider",
+                footer: "border-t border-divider bg-content1",
+                closeButton: "hover:bg-default-100 active:bg-default-200"
+            }}
+        >
             <ModalContent>
                 {(onClose) => (
                     <>
-                        <ModalHeader>✏️ Editar Tasca</ModalHeader>
-                        <ModalBody className="gap-4">
-                            <Input label="Títol" value={title} onValueChange={setTitle} variant="bordered" />
-                            <Textarea label="Descripció" value={description} onValueChange={setDescription} variant="bordered" />
+                        <ModalHeader>✏️ {t('edit_task_title')}</ModalHeader>
+                        <ModalBody className="gap-4 py-6">
+                            <Input label={t('task_title')} value={title} onValueChange={setTitle} variant="bordered" classNames={{ inputWrapper: "border-divider" }} />
+                            <Textarea label={t('task_description')} value={description} onValueChange={setDescription} variant="bordered" classNames={{ inputWrapper: "border-divider" }} />
                             
                             <div className="flex gap-4">
-                                <Select label="Tipus" selectedKeys={[type]} onChange={(e) => setType(e.target.value)} variant="bordered">
-                                    <SelectItem key="TASK">📝 Tasca</SelectItem>
-                                    <SelectItem key="FEATURE">🚀 Feature</SelectItem>
-                                    <SelectItem key="BUG">🐛 Bug</SelectItem>
+                                <Select 
+                                    label={t('filter_type')} 
+                                    selectedKeys={new Set([type])} 
+                                    onSelectionChange={(keys) => {
+                                        const selectedKey = Array.from(keys)[0] as string;
+                                        if (selectedKey) setType(selectedKey);
+                                    }} 
+                                    variant="bordered"
+                                    classNames={{ trigger: "border-divider" }}
+                                >
+                                    <SelectItem key="TASK" textValue={`📝 ${t('type_task')}`}>📝 {t('type_task')}</SelectItem>
+                                    <SelectItem key="FEATURE" textValue={`🚀 ${t('type_feature')}`}>🚀 {t('type_feature')}</SelectItem>
+                                    <SelectItem key="BUG" textValue={`🐛 ${t('type_bug')}`}>🐛 {t('type_bug')}</SelectItem>
                                 </Select>
-                                <Select label="Prioritat" selectedKeys={[priority]} onChange={(e) => setPriority(e.target.value)} variant="bordered">
-                                    <SelectItem key="LOW">🟢 Baixa</SelectItem>
-                                    <SelectItem key="MEDIUM">🟡 Mitjana</SelectItem>
-                                    <SelectItem key="HIGH">🟠 Alta</SelectItem>
-                                    <SelectItem key="URGENT">🔴 Urgent</SelectItem>
+
+                                <Select 
+                                    label={t('task_priority')} 
+                                    selectedKeys={new Set([priority])} 
+                                    onSelectionChange={(keys) => {
+                                        const selectedKey = Array.from(keys)[0] as string;
+                                        if (selectedKey) setPriority(selectedKey);
+                                    }} 
+                                    variant="bordered"
+                                    classNames={{ trigger: "border-divider" }}
+                                >
+                                    <SelectItem key="LOW" textValue={`🟢 ${t('priority_low')}`}>🟢 {t('priority_low')}</SelectItem>
+                                    <SelectItem key="MEDIUM" textValue={`🟡 ${t('priority_medium')}`}>🟡 {t('priority_medium')}</SelectItem>
+                                    <SelectItem key="HIGH" textValue={`🟠 ${t('priority_high')}`}>🟠 {t('priority_high')}</SelectItem>
+                                    <SelectItem key="URGENT" textValue={`🔴 ${t('priority_urgent')}`}>🔴 {t('priority_urgent')}</SelectItem>
                                 </Select>
                             </div>
 
                             <div className="flex gap-4">
-                                <Input type="date" label="Data Límit" value={dueDate} onValueChange={setDueDate} variant="bordered" />
-                                <Input label="Assignar a (Email)" placeholder="Deixa-ho buit per desassignar" value={assigneeEmail} onValueChange={setAssigneeEmail} variant="bordered" />
+                                <Input type="date" label={t('task_due_date')} value={dueDate} onValueChange={setDueDate} variant="bordered" classNames={{ inputWrapper: "border-divider" }} />
+                                <Input label={t('task_assignee')} placeholder={t('assignee_placeholder')} value={assigneeEmail} onValueChange={setAssigneeEmail} variant="bordered" classNames={{ inputWrapper: "border-divider" }} />
                             </div>
 
-                            <Divider className="my-1" />
+                            <Divider className="my-1 bg-divider" />
 
                             {/* --- DEPENDÈNCIES --- */}
                             <div className="flex flex-col gap-2">
-                                <h4 className="text-sm font-semibold text-white flex items-center gap-2">
-                                    🔗 Depèn de...
+                                <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                    🔗 {t('depends_on')}
                                 </h4>
                                 <Select 
-                                    label="Tasques bloquejants" 
-                                    placeholder="Aquesta tasca no es pot fer fins que..."
+                                    label={t('blocking_tasks')} 
+                                    placeholder={t('blocking_tasks_placeholder')}
                                     selectionMode="multiple" 
                                     selectedKeys={dependencyIds} 
                                     onSelectionChange={(keys) => setDependencyIds(new Set(Array.from(keys).map(String)))}
                                     variant="bordered"
+                                    classNames={{ trigger: "border-divider" }}
                                 >
                                     {availableTasks.map((t) => (
                                         <SelectItem key={t.id.toString()} textValue={t.title}>
@@ -262,24 +293,24 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
                                     ))}
                                 </Select>
                                 {dependencyIds.size > 0 && (
-                                    <p className="text-xs text-warning">Aquesta tasca està bloquejada per {dependencyIds.size} tasca/ques més.</p>
+                                    <p className="text-xs text-warning">{t('task_blocked_by', { count: dependencyIds.size })}</p>
                                 )}
                             </div>
 
-                            <Divider className="my-1" />
+                            <Divider className="my-1 bg-divider" />
                             
                             {/* SUBTASQUES */}
                             <div className="flex flex-col gap-2">
-                                <h4 className="text-sm font-semibold text-white flex items-center gap-2">
-                                    🗂️ Subtasques <Chip size="sm" variant="flat">{subtasks.length}</Chip>
+                                <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                    🗂️ {t('subtasks')} <Chip size="sm" variant="flat">{subtasks.length}</Chip>
                                 </h4>
                                 {subtasks.length > 0 && (
                                     <div className="flex flex-col gap-2 mb-2">
                                         {subtasks.map((st) => (
-                                            <div key={st.id} className="flex justify-between items-center bg-zinc-900/50 p-2 rounded-lg border border-white/5 hover:border-white/20">
+                                            <div key={st.id} className="flex justify-between items-center bg-content2 p-2 rounded-lg border border-divider hover:border-primary/30 transition-colors">
                                                 <div className="flex items-center gap-3">
                                                     <Checkbox isSelected={st.status === 'DONE'} onValueChange={() => handleToggleSubtask(st.id, st.status)} color="success" size="sm" />
-                                                    <span className={`text-sm ${st.status === 'DONE' ? 'line-through text-default-500' : 'text-white'}`}>{st.title}</span>
+                                                    <span className={`text-sm ${st.status === 'DONE' ? 'line-through text-default-500' : 'text-foreground'}`}>{st.title}</span>
                                                 </div>
                                                 <Button isIconOnly size="sm" variant="light" color="danger" onPress={() => handleDeleteSubtask(st.id)}>✕</Button>
                                             </div>
@@ -287,22 +318,22 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
                                     </div>
                                 )}
                                 <div className="flex gap-2">
-                                    <Input size="sm" placeholder="Nova subtasca..." value={newSubtaskTitle} onValueChange={setNewSubtaskTitle} variant="bordered" onKeyDown={(e) => e.key === 'Enter' && handleAddSubtask()} />
-                                    <Button size="sm" color="secondary" variant="flat" onPress={handleAddSubtask} isLoading={loadingSubtask}>Afegir</Button>
+                                    <Input size="sm" placeholder={t('new_subtask_placeholder')} value={newSubtaskTitle} onValueChange={setNewSubtaskTitle} variant="bordered" classNames={{ inputWrapper: "border-divider" }} onKeyDown={(e) => e.key === 'Enter' && handleAddSubtask()} />
+                                    <Button size="sm" color="secondary" variant="flat" onPress={handleAddSubtask} isLoading={loadingSubtask}>{t('add')}</Button>
                                 </div>
                             </div>
 
-                            <Divider className="my-1" />
+                            <Divider className="my-1 bg-divider" />
 
                             {/* --- SECCIÓ D'ENLLAÇOS ADJUNTS --- */}
                             <div className="flex flex-col gap-2">
-                                <h4 className="text-sm font-semibold text-white flex items-center gap-2">
-                                    📎 Enllaços Adjunts <Chip size="sm" variant="flat" color="warning">{links.length}</Chip>
+                                <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                    📎 {t('attached_links')} <Chip size="sm" variant="flat" color="warning">{links.length}</Chip>
                                 </h4>
                                 {links.length > 0 && (
                                     <div className="flex flex-col gap-2 mb-2">
                                         {links.map((link, index) => (
-                                            <div key={index} className="flex justify-between items-center bg-zinc-900/50 p-2 rounded-lg border border-white/5">
+                                            <div key={index} className="flex justify-between items-center bg-content2 p-2 rounded-lg border border-divider">
                                                 <a href={link.startsWith('http') ? link : `https://${link}`} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline truncate flex-1 mr-2">
                                                     {link}
                                                 </a>
@@ -314,34 +345,35 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
                                 <div className="flex gap-2">
                                     <Input 
                                         size="sm" 
-                                        placeholder="Afegir link (GitHub, Figma, etc...)" 
+                                        placeholder={t('add_link_placeholder')} 
                                         value={newLink} 
                                         onValueChange={setNewLink} 
                                         variant="bordered" 
+                                        classNames={{ inputWrapper: "border-divider" }}
                                         onKeyDown={(e) => e.key === 'Enter' && handleAddLink()} 
                                     />
                                     <Button size="sm" color="warning" variant="flat" onPress={handleAddLink}>+ Link</Button>
                                 </div>
                             </div>
 
-                            <Divider className="my-1" />
+                            <Divider className="my-1 bg-divider" />
 
                             {/* --- XAT DE COMENTARIS --- */}
                             <div className="flex flex-col gap-3">
-                                <h4 className="text-sm font-semibold text-white flex items-center gap-2">
-                                    💬 Comentaris <Chip size="sm" variant="flat">{comments.length}</Chip>
+                                <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                    💬 {t('comments')} <Chip size="sm" variant="flat">{comments.length}</Chip>
                                 </h4>
                                 
                                 <div className="flex flex-col gap-3 max-h-48 overflow-y-auto pr-2">
                                     {comments.length === 0 ? (
-                                        <p className="text-xs text-default-500 text-center py-4">Cap comentari encara. Trenca el gel!</p>
+                                        <p className="text-xs text-default-500 text-center py-4">{t('no_comments')}</p>
                                     ) : (
                                         comments.map(comment => (
                                             <div key={comment.id} className="flex gap-3 items-start">
                                                 <div title={comment.authorName} className="w-8 h-8 rounded-full bg-primary/20 border border-primary flex items-center justify-center text-xs font-bold text-primary shrink-0 mt-1">
                                                     {getInitials(comment.authorName)}
                                                 </div>
-                                                <div className="bg-zinc-800/80 rounded-xl rounded-tl-none p-3 border border-white/5 text-sm text-white w-full">
+                                                <div className="bg-content2 rounded-xl rounded-tl-none p-3 border border-divider text-sm text-foreground w-full">
                                                     <div className="flex justify-between items-center mb-1">
                                                         <span className="font-bold text-xs text-primary">{comment.authorName}</span>
                                                     </div>
@@ -356,24 +388,25 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
                                     <Textarea 
                                         minRows={1} 
                                         maxRows={3} 
-                                        placeholder="Escriu un comentari..." 
+                                        placeholder={t('write_comment_placeholder')} 
                                         value={newCommentText} 
                                         onValueChange={setNewCommentText}
                                         variant="bordered"
                                         className="flex-1"
+                                        classNames={{ inputWrapper: "border-divider" }}
                                     />
                                     <Button color="primary" onPress={handleAddComment} isLoading={loadingComment} className="mb-1">
-                                        Enviar
+                                        {t('send')}
                                     </Button>
                                 </div>
                             </div>
 
                         </ModalBody>
-                        <ModalFooter className="flex justify-between border-t border-white/10 pt-4 mt-2">
-                            <Button color="danger" variant="flat" onPress={() => handleDelete(onClose)}>🗑️ Esborrar Tasca</Button>
+                        <ModalFooter className="flex justify-between">
+                            <Button color="danger" variant="flat" onPress={() => handleDelete(onClose)}>🗑️ {t('delete_task_btn')}</Button>
                             <div className="flex gap-2">
-                                <Button variant="flat" onPress={onClose}>Cancel·lar</Button>
-                                <Button color="primary" isLoading={loading} onPress={() => handleUpdate(onClose)}>Guardar Canvis</Button>
+                                <Button variant="flat" onPress={onClose}>{t('cancel')}</Button>
+                                <Button color="primary" isLoading={loading} onPress={() => handleUpdate(onClose)}>{t('save_changes_btn')}</Button>
                             </div>
                         </ModalFooter>
                     </>
