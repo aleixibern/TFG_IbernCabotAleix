@@ -22,7 +22,6 @@ export const CreateSprintModal = ({ isOpen, onOpenChange, projectId, onSprintCre
         try {
             const newSprint = await sprintService.createSprint(projectId, { name, startDate, endDate });
             onSprintCreated(newSprint);
-            // Netegem els camps
             setName("");
             setStartDate("");
             setEndDate("");
@@ -35,12 +34,23 @@ export const CreateSprintModal = ({ isOpen, onOpenChange, projectId, onSprintCre
     };
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="blur" placement="top-center">
-            <ModalContent className="bg-zinc-900 border border-white/10 text-white">
+        <Modal 
+            isOpen={isOpen} 
+            onOpenChange={onOpenChange} 
+            backdrop="blur" 
+            placement="top-center"
+            classNames={{
+                base: "bg-content1 text-foreground border border-divider shadow-lg",
+                header: "border-b border-divider",
+                footer: "border-t border-divider",
+                closeButton: "hover:bg-default-100 active:bg-default-200"
+            }}
+        >
+            <ModalContent>
                 {(onClose) => (
                     <>
                         <ModalHeader className="font-bold text-xl">🏃‍♂️ Nou Sprint</ModalHeader>
-                        <ModalBody>
+                        <ModalBody className="py-6 gap-4">
                             <Input 
                                 autoFocus 
                                 label="Nom del Sprint" 
@@ -48,16 +58,14 @@ export const CreateSprintModal = ({ isOpen, onOpenChange, projectId, onSprintCre
                                 value={name} 
                                 onValueChange={setName} 
                                 variant="bordered" 
-                                classNames={{ input: "text-white", label: "text-white/70" }} 
                             />
-                            <div className="flex gap-4 mt-2">
+                            <div className="flex gap-4">
                                 <Input 
                                     type="date" 
                                     label="Data d'inici" 
                                     value={startDate} 
                                     onValueChange={setStartDate} 
                                     variant="bordered" 
-                                    classNames={{ input: "text-white", label: "text-white/70" }} 
                                 />
                                 <Input 
                                     type="date" 
@@ -65,7 +73,6 @@ export const CreateSprintModal = ({ isOpen, onOpenChange, projectId, onSprintCre
                                     value={endDate} 
                                     onValueChange={setEndDate} 
                                     variant="bordered" 
-                                    classNames={{ input: "text-white", label: "text-white/70" }} 
                                 />
                             </div>
                         </ModalBody>

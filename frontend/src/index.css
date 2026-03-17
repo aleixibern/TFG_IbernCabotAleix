@@ -1,3 +1,16 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Anul·lar l'anell de focus intern que fa el doble requadre */
+input:focus, 
+textarea:focus, 
+select:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Específic per a Tailwind per si hi ha un ring amagat */
+input, textarea, select {
+  --tw-ring-shadow: 0 0 #000 !important;
+}

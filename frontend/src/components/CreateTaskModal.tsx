@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input, Textarea, Select, SelectItem } from "@heroui/react";
 import { useTranslation } from 'react-i18next';
 import { taskService } from '../services/taskService';
@@ -22,6 +22,17 @@ export const CreateTaskModal = ({ isOpen, onOpenChange, projectId, onTaskCreated
     const [assigneeEmail, setAssigneeEmail] = useState('');
     const [loading, setLoading] = useState(false);
 
+    useEffect(() => {
+        if (isOpen) {
+            setTitle('');
+            setDescription('');
+            setType('TASK');
+            setPriority('MEDIUM');
+            setDueDate('');
+            setAssigneeEmail('');
+        }
+    }, [isOpen]);
+
     const handleCreate = async (onClose: () => void) => {
         if (!title) return;
         setLoading(true);
@@ -35,7 +46,9 @@ export const CreateTaskModal = ({ isOpen, onOpenChange, projectId, onTaskCreated
                 assigneeEmail: assigneeEmail || undefined,
                 sprintId: sprintId || undefined
             });
-            onTaskCreated(newTask);
+            
+            setLoading(false);
+            onClose();
             
             setTitle(''); 
             setDescription(''); 
@@ -43,11 +56,13 @@ export const CreateTaskModal = ({ isOpen, onOpenChange, projectId, onTaskCreated
             setPriority('MEDIUM'); 
             setDueDate(''); 
             setAssigneeEmail('');
-            
-            onClose();
+
+            setTimeout(() => {
+                onTaskCreated(newTask);
+            }, 150);
+
         } catch (error) {
             console.error("Error creant tasca", error);
-        } finally {
             setLoading(false);
         }
     };
@@ -75,8 +90,8 @@ export const CreateTaskModal = ({ isOpen, onOpenChange, projectId, onTaskCreated
                             </div>
                         </ModalHeader>
                         <ModalBody className="gap-4 py-6">
-                            <Input label={t('task_title')} value={title} onValueChange={setTitle} isRequired variant="bordered" classNames={{ inputWrapper: "border-divider" }} />
-                            <Textarea label={t('task_description')} value={description} onValueChange={setDescription} variant="bordered" classNames={{ inputWrapper: "border-divider" }} />
+                            <Input label={t('task_title')} value={title} onValueChange={setTitle} isRequired variant="bordered" />
+                            <Textarea label={t('task_description')} value={description} onValueChange={setDescription} variant="bordered" />
                             
                             <div className="flex gap-4">
                                 <Select 
@@ -87,9 +102,7 @@ export const CreateTaskModal = ({ isOpen, onOpenChange, projectId, onTaskCreated
                                         if (selectedKey) setType(selectedKey);
                                     }}
                                     variant="bordered"
-                                    classNames={{ trigger: "border-divider" }}
                                 >
-                                    {/* AFEGIT textValue A TOTS ELS SELECTITEMS */}
                                     <SelectItem key="TASK" textValue={`📝 ${t('type_task')}`}>📝 {t('type_task')}</SelectItem>
                                     <SelectItem key="FEATURE" textValue={`🚀 ${t('type_feature')}`}>🚀 {t('type_feature')}</SelectItem>
                                     <SelectItem key="BUG" textValue={`🐛 ${t('type_bug')}`}>🐛 {t('type_bug')}</SelectItem>
@@ -103,9 +116,7 @@ export const CreateTaskModal = ({ isOpen, onOpenChange, projectId, onTaskCreated
                                         if (selectedKey) setPriority(selectedKey);
                                     }} 
                                     variant="bordered"
-                                    classNames={{ trigger: "border-divider" }}
                                 >
-                                    {/* AFEGIT textValue A TOTS ELS SELECTITEMS */}
                                     <SelectItem key="LOW" textValue={`🟢 ${t('priority_low')}`}>🟢 {t('priority_low')}</SelectItem>
                                     <SelectItem key="MEDIUM" textValue={`🟡 ${t('priority_medium')}`}>🟡 {t('priority_medium')}</SelectItem>
                                     <SelectItem key="HIGH" textValue={`🟠 ${t('priority_high')}`}>🟠 {t('priority_high')}</SelectItem>
@@ -114,8 +125,8 @@ export const CreateTaskModal = ({ isOpen, onOpenChange, projectId, onTaskCreated
                             </div>
 
                             <div className="flex gap-4">
-                                <Input type="date" label={t('task_due_date')} value={dueDate} onValueChange={setDueDate} variant="bordered" classNames={{ inputWrapper: "border-divider" }} />
-                                <Input label={t('task_assignee')} placeholder="usuari@exemple.com" value={assigneeEmail} onValueChange={setAssigneeEmail} variant="bordered" classNames={{ inputWrapper: "border-divider" }} />
+                                <Input type="date" label={t('task_due_date')} value={dueDate} onValueChange={setDueDate} variant="bordered" />
+                                <Input label={t('task_assignee')} placeholder="usuari@exemple.com" value={assigneeEmail} onValueChange={setAssigneeEmail} variant="bordered" />
                             </div>
                         </ModalBody>
                         <ModalFooter>

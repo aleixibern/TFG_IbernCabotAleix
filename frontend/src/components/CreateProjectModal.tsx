@@ -1,14 +1,5 @@
 import { useState } from "react";
-import { 
-  Modal, 
-  ModalContent, 
-  ModalHeader, 
-  ModalBody, 
-  ModalFooter, 
-  Button, 
-  Input, 
-  Textarea 
-} from "@heroui/react";
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input, Textarea } from "@heroui/react";
 import api from "../api/axios";
 import type { Project } from "../types/Project";
 
@@ -19,7 +10,6 @@ interface CreateProjectModalProps {
 }
 
 export const CreateProjectModal = ({ isOpen, onOpenChange, onProjectCreated }: CreateProjectModalProps) => {
-  // 1. AFEGIM "subject" A L'ESTAT INICIAL
   const [formData, setFormData] = useState({ title: "", description: "", subject: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -37,9 +27,8 @@ export const CreateProjectModal = ({ isOpen, onOpenChange, onProjectCreated }: C
     try {
       const response = await api.post<Project>("/projects", formData);
       onProjectCreated(response.data);
-      // 2. NETEJEM TAMBÉ EL "subject" EN ACABAR
       setFormData({ title: "", description: "", subject: "" }); 
-      onClose(); // Tancar modal
+      onClose(); 
     } catch (err) {
       console.error(err);
       setError("Error al crear el projecte.");
@@ -54,14 +43,20 @@ export const CreateProjectModal = ({ isOpen, onOpenChange, onProjectCreated }: C
       onOpenChange={onOpenChange} 
       placement="top-center" 
       backdrop="blur"
+      classNames={{
+        base: "bg-content1 text-foreground border border-divider shadow-lg",
+        header: "border-b border-divider",
+        footer: "border-t border-divider",
+        closeButton: "hover:bg-default-100 active:bg-default-200"
+      }}
     >
-      <ModalContent className="bg-zinc-900 border border-white/10 text-white">
+      <ModalContent>
         {(onClose) => (
           <>
             <ModalHeader className="flex flex-col gap-1 text-xl font-bold">
               Nou Projecte
             </ModalHeader>
-            <ModalBody>
+            <ModalBody className="py-6 gap-4">
               <Input
                 autoFocus
                 label="Títol del projecte"
@@ -71,14 +66,8 @@ export const CreateProjectModal = ({ isOpen, onOpenChange, onProjectCreated }: C
                 value={formData.title}
                 onChange={handleChange}
                 isRequired
-                classNames={{
-                  input: "text-white",
-                  label: "text-white/70",
-                  inputWrapper: "border-white/20 hover:border-primary group-data-[focus=true]:border-primary"
-                }}
               />
               
-              {/* 3. AFEGIM L'INPUT DE L'ASSIGNATURA */}
               <Input
                 label="Assignatura"
                 placeholder="Ex: Treball de Final de Grau"
@@ -86,11 +75,6 @@ export const CreateProjectModal = ({ isOpen, onOpenChange, onProjectCreated }: C
                 name="subject"
                 value={formData.subject}
                 onChange={handleChange}
-                classNames={{
-                  input: "text-white",
-                  label: "text-white/70",
-                  inputWrapper: "border-white/20 hover:border-primary group-data-[focus=true]:border-primary"
-                }}
               />
 
               <Textarea
@@ -100,11 +84,6 @@ export const CreateProjectModal = ({ isOpen, onOpenChange, onProjectCreated }: C
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                classNames={{
-                  input: "text-white",
-                  label: "text-white/70",
-                  inputWrapper: "border-white/20 hover:border-primary group-data-[focus=true]:border-primary"
-                }}
               />
               {error && <p className="text-danger text-small">{error}</p>}
             </ModalBody>

@@ -17,11 +17,10 @@ module.exports = {
       themes: {
         dark: {
           colors: {
-            background: "#000000", // Fons de la pàgina (Negre pur)
-            foreground: "#ECEDEE", // Text principal
+            background: "#000000", 
+            foreground: "#ECEDEE", 
             
-            // AQUESTA ÉS LA CLAU QUE FALTAVA:
-            content1: "#18181b",   // Gris molt fosc per a targetes i menús (Zinc-900)
+            content1: "#18181b",   
             
             primary: {
               DEFAULT: "#006FEE",

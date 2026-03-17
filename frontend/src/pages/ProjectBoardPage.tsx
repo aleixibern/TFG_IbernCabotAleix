@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Spinner, Button, Card, CardHeader, CardBody, Chip, useDisclosure, Select, SelectItem, Tabs, Tab } from "@heroui/react";
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
-import { useTranslation } from 'react-i18next'; // <-- AFEGIT
+import { useTranslation } from 'react-i18next'; 
+import toast from 'react-hot-toast';
 import api from '../api/axios';
 import { taskService } from '../services/taskService';
 import { sprintService } from '../services/sprintService';
@@ -15,10 +16,10 @@ import { CreateTaskModal } from '../components/CreateTaskModal';
 import { EditTaskModal } from '../components/EditTaskModal';
 import { InviteMemberModal } from '../components/InviteMemberModal';
 import { CreateSprintModal } from '../components/CreateSprintModal'; 
+import { ConfirmModal } from '../components/ConfirmModal'; // <-- IMPORTAT A L'INICI
 import { getInitials } from '../utils/stringUtils';
 import { ProjectAnalytics } from '../components/ProjectAnalytics';
 
-// Movut fora de l'estat però s'utilitzarà amb t() a dins
 const COLUMNS_KEYS = [
     { id: TaskStatus.BACKLOG, titleKey: "column_backlog", color: "default" },
     { id: TaskStatus.READY, titleKey: "column_ready", color: "secondary" },
@@ -43,7 +44,7 @@ const PRIORITY_STYLES = {
 export default function ProjectBoardPage() {
     const { id } = useParams(); 
     const navigate = useNavigate();
-    const { t } = useTranslation(); // <-- AFEGIT
+    const { t } = useTranslation(); 
     
     const { isOpen: isCreateOpen, onOpen: onCreateOpen, onOpenChange: onCreateOpenChange } = useDisclosure();
     const { isOpen: isEditOpen, onOpen: onEditOpen, onOpenChange: onEditOpenChange } = useDisclosure();
@@ -62,6 +63,15 @@ export default function ProjectBoardPage() {
     
     const [activeTab, setActiveTab] = useState("tablero");
     const [startingSprint, setStartingSprint] = useState<number | null>(null);
+
+    // NOU ESTAT PEL MODAL DE CONFIRMACIÓ GENÈRIC
+    const [confirmData, setConfirmData] = useState<{
+        isOpen: boolean, 
+        title: string, 
+        message: string, 
+        action: () => void, 
+        color: "danger" | "success"
+    } | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -95,39 +105,58 @@ export default function ProjectBoardPage() {
             const updatedSprint = await sprintService.startSprint(id, sprintId);
             setSprints(prevSprints => prevSprints.map(s => s.id === sprintId ? updatedSprint : s));
             setActiveTab("tablero");
+            toast.success(t('success_start_sprint', { defaultValue: 'Sprint iniciat!' })); 
         } catch (error: any) {
-            alert(error.response?.data?.message || t('error_start_sprint'));
+            toast.error(error.response?.data?.message || t('error_start_sprint')); 
         } finally {
             setStartingSprint(null);
         }
     };
 
-    const handleDeleteSprint = async (sprintId: number) => {
+    const handleDeleteSprint = (sprintId: number) => {
         if (!id) return;
-        if (confirm(t('confirm_delete_sprint'))) {
-            try {
-                await sprintService.deleteSprint(id, sprintId);
-                setSprints(prev => prev.filter(s => s.id !== sprintId));
-                setTasks(prev => prev.map(t => t.sprintId === sprintId ? { ...t, sprintId: null } : t));
-            } catch (error) {
-                console.error("Error esborrant sprint", error);
-                alert(t('error_delete_sprint'));
+        
+        // CANVI: En comptes de window.confirm, configurem el nostre modal
+        setConfirmData({
+            isOpen: true,
+            title: t('delete_sprint_title', { defaultValue: 'Esborrar Sprint' }),
+            message: t('confirm_delete_sprint'),
+            color: "danger",
+            action: async () => {
+                try {
+                    await sprintService.deleteSprint(id, sprintId);
+                    setSprints(prev => prev.filter(s => s.id !== sprintId));
+                    setTasks(prev => prev.map(t => t.sprintId === sprintId ? { ...t, sprintId: null } : t));
+                    toast.success(t('success_delete_sprint', { defaultValue: 'Sprint esborrat correctament' }));
+                } catch (error) {
+                    console.error("Error esborrant sprint", error);
+                    toast.error(t('error_delete_sprint')); 
+                }
             }
-        }
+        });
     };
 
-    const handleCompleteSprint = async (sprintId: number) => {
+    const handleCompleteSprint = (sprintId: number) => {
         if (!id) return;
-        if (confirm(t('confirm_complete_sprint'))) {
-            try {
-                const updatedSprint = await sprintService.completeSprint(id, sprintId);
-                setSprints(prev => prev.map(s => s.id === sprintId ? updatedSprint : s));
-                setActiveTab("backlog");
-                alert(t('success_complete_sprint'));
-            } catch (error) {
-                console.error("Error completant sprint", error);
+        
+        // CANVI: En comptes de window.confirm, configurem el nostre modal
+        setConfirmData({
+            isOpen: true,
+            title: t('complete_sprint_title', { defaultValue: 'Completar Sprint' }),
+            message: t('confirm_complete_sprint'),
+            color: "success",
+            action: async () => {
+                try {
+                    const updatedSprint = await sprintService.completeSprint(id, sprintId);
+                    setSprints(prev => prev.map(s => s.id === sprintId ? updatedSprint : s));
+                    setActiveTab("backlog");
+                    toast.success(t('success_complete_sprint'));
+                } catch (error) {
+                    console.error("Error completant sprint", error);
+                    toast.error(t('error_complete_sprint', { defaultValue: "No s'ha pogut completar l'sprint." }));
+                }
             }
-        }
+        });
     };
 
     const onDragEndTablero = async (result: DropResult) => {
@@ -146,7 +175,7 @@ export default function ProjectBoardPage() {
         } catch (error: any) { 
             console.error("Error movent tasca", error);
             setTasks(previousTasks);
-            alert(error.response?.data?.message || t('error_move_task'));
+            toast.error(error.response?.data?.message || t('error_move_task')); 
         }
     };
 
@@ -159,8 +188,14 @@ export default function ProjectBoardPage() {
         const targetSprintId = isDestBacklog ? null : Number(destination.droppableId.replace('sprint-', ''));
 
         setTasks(prev => prev.map(t => t.id === movedTaskId ? { ...t, sprintId: targetSprintId } : t));
-        try { await taskService.updateTask(movedTaskId, { sprintId: targetSprintId === null ? -1 : targetSprintId }); } 
-        catch (error) { console.error("Error movent tasca de sprint", error); }
+        try { 
+            await taskService.updateTask(movedTaskId, { sprintId: targetSprintId === null ? -1 : targetSprintId }); 
+            toast.success(isDestBacklog ? 'Tasca moguda al Backlog' : 'Tasca afegida a l\'Sprint');
+        } 
+        catch (error) { 
+            console.error("Error movent tasca de sprint", error); 
+            toast.error("Error movent la tasca de l'Sprint");
+        }
     };
 
     const activeSprint = sprints.find(s => s.status === 'ACTIVE');
@@ -430,11 +465,59 @@ export default function ProjectBoardPage() {
                     </div>
                 )}
                 
-                <CreateTaskModal isOpen={isCreateOpen} onOpenChange={onCreateOpenChange} projectId={id!} onTaskCreated={(t) => setTasks([...tasks, t])} sprintId={activeTab === "tablero" ? activeSprint?.id : null}/>                
-                <EditTaskModal isOpen={isEditOpen} onOpenChange={onEditOpenChange} task={selectedTask} projectId={id!} onTaskUpdated={(ut) => setTasks(tasks.map(t => t.id === ut.id ? ut : t))} onTaskDeleted={(tid) => setTasks(tasks.filter(t => t.id !== tid))} />
+                {/* ELS MODALS (FORMULARIS) */}
+                <CreateTaskModal 
+                    isOpen={isCreateOpen} 
+                    onOpenChange={onCreateOpenChange} 
+                    projectId={id!} 
+                    onTaskCreated={(t) => {
+                        setTasks([...tasks, t]);
+                        toast.success(t('task_created_success', { defaultValue: 'Tasca creada amb èxit!' })); 
+                    }} 
+                    sprintId={activeTab === "tablero" ? activeSprint?.id : null}
+                />                
+                
+                <EditTaskModal 
+                    isOpen={isEditOpen} 
+                    onOpenChange={onEditOpenChange} 
+                    task={selectedTask} 
+                    projectId={id!} 
+                    onTaskUpdated={(ut) => {
+                        setTasks(tasks.map(t => t.id === ut.id ? ut : t));
+                        toast.success(t('task_updated_success', { defaultValue: 'Tasca actualitzada!' })); 
+                    }} 
+                    onTaskDeleted={(tid) => {
+                        setTasks(tasks.filter(t => t.id !== tid));
+                        toast.success(t('task_deleted_success', { defaultValue: 'Tasca esborrada' })); 
+                    }} 
+                />
+                
                 <InviteMemberModal isOpen={isInviteOpen} onOpenChange={onInviteOpenChange} projectId={id!} />
                 
-                <CreateSprintModal isOpen={isSprintOpen} onOpenChange={onSprintOpenChange} projectId={id!} onSprintCreated={(newSprint) => setSprints([...sprints, newSprint])} />
+                <CreateSprintModal 
+                    isOpen={isSprintOpen} 
+                    onOpenChange={onSprintOpenChange} 
+                    projectId={id!} 
+                    onSprintCreated={(newSprint) => {
+                        setSprints([...sprints, newSprint]);
+                        toast.success(t('sprint_created_success', { defaultValue: 'Nou Sprint planificat!' })); 
+                    }} 
+                />
+
+                {/* NOU MODAL DE CONFIRMACIÓ GENÈRIC PER PROJECT BOARD */}
+                {confirmData && (
+                    <ConfirmModal
+                        isOpen={confirmData.isOpen}
+                        onOpenChange={(isOpen) => setConfirmData(isOpen ? confirmData : null)}
+                        title={confirmData.title}
+                        message={confirmData.message}
+                        onConfirm={confirmData.action}
+                        cancelText={t('cancel')}
+                        confirmText={t('confirm', { defaultValue: "Confirmar" })}
+                        color={confirmData.color}
+                    />
+                )}
+
             </div>
         </MainLayout>
     );

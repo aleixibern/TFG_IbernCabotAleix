@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'; // Afegeix useEffect
+import { useState, useEffect } from 'react';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input, Chip, Divider } from "@heroui/react";
 import { projectService } from '../services/projectService';
-import api from '../api/axios'; // Necessari per recarregar el projecte
+import api from '../api/axios'; 
 
 interface Props {
     isOpen: boolean;
@@ -12,9 +12,8 @@ interface Props {
 export const InviteMemberModal = ({ isOpen, onOpenChange, projectId }: Props) => {
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
-    const [members, setMembers] = useState<string[]>([]); // Estat per guardar els membres
+    const [members, setMembers] = useState<string[]>([]); 
 
-    // Carregar els membres actuals quan s'obre el modal
     useEffect(() => {
         if (isOpen && projectId) {
             api.get(`/projects/${projectId}`).then(res => {
@@ -26,7 +25,6 @@ export const InviteMemberModal = ({ isOpen, onOpenChange, projectId }: Props) =>
     const handleInvite = async (onClose: () => void) => {
         if (!email) return;
         
-        // Comprovació ràpida al frontend
         if (members.includes(email)) {
             alert("Aquest usuari ja és membre del projecte!");
             return;
@@ -46,13 +44,22 @@ export const InviteMemberModal = ({ isOpen, onOpenChange, projectId }: Props) =>
     };
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="blur">
+        <Modal 
+            isOpen={isOpen} 
+            onOpenChange={onOpenChange} 
+            backdrop="blur"
+            classNames={{
+                base: "bg-content1 text-foreground border border-divider shadow-lg",
+                header: "border-b border-divider",
+                footer: "border-t border-divider",
+                closeButton: "hover:bg-default-100 active:bg-default-200"
+            }}
+        >
             <ModalContent>
                 {(onClose) => (
                     <>
                         <ModalHeader>Gestió de l'Equip 👥</ModalHeader>
-                        <ModalBody>
-                            {/* LLISTA DE MEMBRES ACTUALS */}
+                        <ModalBody className="py-6">
                             <div className="mb-4">
                                 <p className="text-small text-default-500 mb-2">Membres actuals:</p>
                                 <div className="flex flex-wrap gap-2">
@@ -68,7 +75,7 @@ export const InviteMemberModal = ({ isOpen, onOpenChange, projectId }: Props) =>
                                 </div>
                             </div>
                             
-                            <Divider className="my-2"/>
+                            <Divider className="my-2 bg-divider"/>
 
                             <Input
                                 label="Convidar nou membre (Email)"
