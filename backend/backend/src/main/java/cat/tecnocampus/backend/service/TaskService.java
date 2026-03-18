@@ -26,9 +26,15 @@ public class TaskService {
     private final UserRepository userRepository;
     private final SprintRepository sprintRepository;
 
+    // NOU: Injectem el servei d'activitat
+    private final ActivityLogService activityLogService;
+
     public TaskResponse createTask(Long projectId, TaskRequest request, String userEmail) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Projecte no trobat"));
+
+        User currentUser = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuari no trobat"));
 
         boolean isOwner = project.getOwner().getEmail().equals(userEmail);
         boolean isMember = project.getMembers().stream().anyMatch(m -> m.getEmail().equals(userEmail));
@@ -66,7 +72,12 @@ public class TaskService {
             task.setSprint(sprint);
         }
 
-        return mapToResponse(taskRepository.save(task));
+        Task savedTask = taskRepository.save(task);
+
+        // NOU: Registrem la creació de la tasca
+        activityLogService.logAction(project, savedTask, currentUser, "ha creat la tasca", null, savedTask.getStatus().name());
+
+        return mapToResponse(savedTask);
     }
 
     public List<TaskResponse> getTasksByProject(Long projectId, String userEmail) {
@@ -80,6 +91,8 @@ public class TaskService {
                 .orElseThrow(() -> new RuntimeException("Tasca no trobada"));
 
         Project project = task.getProject();
+        User currentUser = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuari no trobat"));
 
         boolean isOwner = project.getOwner().getEmail().equals(userEmail);
         boolean isMember = project.getMembers().stream()
@@ -90,6 +103,7 @@ public class TaskService {
         }
 
         cat.tecnocampus.backend.domain.TaskStatus nouEstat = cat.tecnocampus.backend.domain.TaskStatus.valueOf(status);
+        String oldStatusString = task.getStatus() != null ? task.getStatus().name() : "Desconegut";
 
         if (nouEstat == cat.tecnocampus.backend.domain.TaskStatus.IN_PROGRESS ||
                 nouEstat == cat.tecnocampus.backend.domain.TaskStatus.IN_REVIEW ||
@@ -105,6 +119,10 @@ public class TaskService {
 
         task.setStatus(nouEstat);
         Task savedTask = taskRepository.save(task);
+
+        // NOU: Registrem el canvi d'estat
+        activityLogService.logAction(project, savedTask, currentUser, "ha actualitzat el camp 'Estat' en", oldStatusString, nouEstat.name());
+
         return mapToResponse(savedTask);
     }
 
@@ -113,6 +131,8 @@ public class TaskService {
                 .orElseThrow(() -> new RuntimeException("Tasca no trobada"));
 
         Project project = task.getProject();
+        User currentUser = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuari no trobat"));
 
         boolean isOwner = project.getOwner().getEmail().equals(userEmail);
         boolean isMember = project.getMembers().stream()
@@ -127,7 +147,11 @@ public class TaskService {
             taskRepository.save(dependentTask);
         }
 
+        String taskTitle = task.getTitle();
         taskRepository.delete(task);
+
+        // NOU: Registrem que s'ha esborrat la tasca (passem null a la tasca perquè ja no existeix)
+        activityLogService.logAction(project, null, currentUser, "ha eliminat la tasca '" + taskTitle + "'", null, null);
     }
 
     private TaskResponse mapToResponse(Task task) {
@@ -169,11 +193,19 @@ public class TaskService {
                 .orElseThrow(() -> new RuntimeException("Tasca no trobada"));
 
         Project project = task.getProject();
+        User currentUser = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuari no trobat"));
+
         boolean isOwner = project.getOwner().getEmail().equals(userEmail);
         boolean isMember = project.getMembers().stream().anyMatch(m -> m.getEmail().equals(userEmail));
         if (!isOwner && !isMember) throw new RuntimeException("No autoritzat");
 
-        if (request.getTitle() != null) task.setTitle(request.getTitle());
+        boolean fieldsChanged = false;
+
+        if (request.getTitle() != null && !request.getTitle().equals(task.getTitle())) {
+            task.setTitle(request.getTitle());
+            fieldsChanged = true;
+        }
         if (request.getDescription() != null) task.setDescription(request.getDescription());
         if (request.getLinks() != null) task.setLinks(request.getLinks());
         if (request.getType() != null) task.setType(cat.tecnocampus.backend.domain.TaskType.valueOf(request.getType()));
@@ -203,6 +235,12 @@ public class TaskService {
                 task.setSprint(sprint);
             }
         }
-        return mapToResponse(taskRepository.save(task));
+
+        Task savedTask = taskRepository.save(task);
+
+        // NOU: Registrem una edició general de la tasca
+        activityLogService.logAction(project, savedTask, currentUser, "ha editat detalls de", null, null);
+
+        return mapToResponse(savedTask);
     }
 }

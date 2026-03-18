@@ -19,6 +19,7 @@ import { CreateSprintModal } from '../components/CreateSprintModal';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { getInitials } from '../utils/stringUtils';
 import { ProjectAnalytics } from '../components/ProjectAnalytics';
+import { ProjectActivity } from '../components/ProjectActivity'; // NOU: Importem l'historial d'activitat
 
 const COLUMNS_KEYS = [
     { id: TaskStatus.BACKLOG, titleKey: "column_backlog", color: "default" },
@@ -233,7 +234,8 @@ export default function ProjectBoardPage() {
                         }}>
                         <Tab key="backlog" title={<div className="flex items-center space-x-2"><span>📚 {t('tab_backlog')}</span></div>} />
                         <Tab key="tablero" title={<div className="flex items-center space-x-2"><span>🚀 {t('tab_board')}</span></div>} />
-                        <Tab key="estadistiques" title={<div className="flex items-center space-x-2"><span>📊 {t('tab_stats')}</span></div>} />
+                        <Tab key="estadistiques" title={<div className="flex items-center space-x-2"><span>📊 {t('tab_stats', {defaultValue: 'Estadístiques'})}</span></div>} />
+                        <Tab key="activitat" title={<div className="flex items-center space-x-2"><span>⏱️ Activitat</span></div>} />
                     </Tabs>
                 </div>
 
@@ -304,11 +306,13 @@ export default function ProjectBoardPage() {
                                 <h2 className="text-xl font-bold text-foreground mb-4">{t('unassigned_tasks')}</h2>
                                 <Droppable droppableId="backlog">
                                     {(provided) => {
+                                        // Aquest és l'arranjament perquè les tasques DONE no surtin al backlog
                                         const backlogTasks = tasks.filter(t => 
                                             !t.parentTaskId && 
                                             (!t.sprintId || sprints.find(s => s.id === t.sprintId)?.status === 'CLOSED') &&
                                             t.status === 'BACKLOG' 
                                         );
+
                                         return (
                                             <div ref={provided.innerRef} {...provided.droppableProps} className="bg-content1 border border-divider rounded-xl p-4 min-h-[150px] shadow-sm">
                                                 {backlogTasks.map((task, index) => (
@@ -486,6 +490,13 @@ export default function ProjectBoardPage() {
                 {activeTab === "estadistiques" && (
                     <div className="flex-grow overflow-y-auto">
                         <ProjectAnalytics tasks={tasks} sprints={sprints} />
+                    </div>
+                )}
+
+                {/* NOVA SECCIÓ D'ACTIVITAT */}
+                {activeTab === "activitat" && (
+                    <div className="flex-grow overflow-y-auto p-2">
+                        <ProjectActivity projectId={id!} />
                     </div>
                 )}
                 

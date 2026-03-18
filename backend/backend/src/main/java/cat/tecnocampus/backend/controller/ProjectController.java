@@ -3,6 +3,8 @@ package cat.tecnocampus.backend.controller;
 import cat.tecnocampus.backend.dto.InvitationResponse;
 import cat.tecnocampus.backend.dto.ProjectRequest;
 import cat.tecnocampus.backend.dto.ProjectResponse;
+import cat.tecnocampus.backend.service.ActivityLogService;
+import cat.tecnocampus.backend.dto.ActivityLogResponse;
 import cat.tecnocampus.backend.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +22,7 @@ import java.util.Map;
 public class ProjectController {
 
     private final ProjectService projectService;
+    private final ActivityLogService activityLogService;
 
     @PostMapping
     public ResponseEntity<ProjectResponse> createProject(@RequestBody ProjectRequest request) {
@@ -72,5 +75,10 @@ public class ProjectController {
     public ResponseEntity<Void> declineInvitation(@PathVariable Long invitationId, Principal principal) {
         projectService.declineInvitation(invitationId, principal.getName());
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{id}/activity")
+    public ResponseEntity<List<ActivityLogResponse>> getProjectActivity(@PathVariable Long id, Principal principal) {
+        return ResponseEntity.ok(activityLogService.getProjectActivity(id));
     }
 }
