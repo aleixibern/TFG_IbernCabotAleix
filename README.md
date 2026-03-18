@@ -1,6 +1,6 @@
 # TFG\_IbernCabotAleix
 
-# 🐾 Lynx - Gestor de Projectes Àgil
+#  Lynx - Gestor de Projectes Àgil
 
 **Lynx** és una aplicació Full-Stack per a la gestió de projectes i tasques basada en metodologies àgils (Sprints i Kanban). Aquest projecte ha estat desenvolupat com a Treball de Final de Grau (TFG).
 

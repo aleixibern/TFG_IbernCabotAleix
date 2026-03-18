@@ -16,7 +16,7 @@ import { CreateTaskModal } from '../components/CreateTaskModal';
 import { EditTaskModal } from '../components/EditTaskModal';
 import { InviteMemberModal } from '../components/InviteMemberModal';
 import { CreateSprintModal } from '../components/CreateSprintModal'; 
-import { ConfirmModal } from '../components/ConfirmModal'; // <-- IMPORTAT A L'INICI
+import { ConfirmModal } from '../components/ConfirmModal';
 import { getInitials } from '../utils/stringUtils';
 import { ProjectAnalytics } from '../components/ProjectAnalytics';
 
@@ -64,7 +64,6 @@ export default function ProjectBoardPage() {
     const [activeTab, setActiveTab] = useState("tablero");
     const [startingSprint, setStartingSprint] = useState<number | null>(null);
 
-    // NOU ESTAT PEL MODAL DE CONFIRMACIÓ GENÈRIC
     const [confirmData, setConfirmData] = useState<{
         isOpen: boolean, 
         title: string, 
@@ -115,8 +114,6 @@ export default function ProjectBoardPage() {
 
     const handleDeleteSprint = (sprintId: number) => {
         if (!id) return;
-        
-        // CANVI: En comptes de window.confirm, configurem el nostre modal
         setConfirmData({
             isOpen: true,
             title: t('delete_sprint_title', { defaultValue: 'Esborrar Sprint' }),
@@ -138,8 +135,6 @@ export default function ProjectBoardPage() {
 
     const handleCompleteSprint = (sprintId: number) => {
         if (!id) return;
-        
-        // CANVI: En comptes de window.confirm, configurem el nostre modal
         setConfirmData({
             isOpen: true,
             title: t('complete_sprint_title', { defaultValue: 'Completar Sprint' }),
@@ -310,9 +305,10 @@ export default function ProjectBoardPage() {
                                 <Droppable droppableId="backlog">
                                     {(provided) => {
                                         const backlogTasks = tasks.filter(t => 
-                                            !t.parentTaskId && (!t.sprintId || sprints.find(s => s.id === t.sprintId)?.status === 'CLOSED')
+                                            !t.parentTaskId && 
+                                            (!t.sprintId || sprints.find(s => s.id === t.sprintId)?.status === 'CLOSED') &&
+                                            t.status === 'BACKLOG' 
                                         );
-
                                         return (
                                             <div ref={provided.innerRef} {...provided.droppableProps} className="bg-content1 border border-divider rounded-xl p-4 min-h-[150px] shadow-sm">
                                                 {backlogTasks.map((task, index) => (
@@ -376,17 +372,45 @@ export default function ProjectBoardPage() {
 
                         <div className="flex gap-4 items-center bg-content1 p-4 rounded-xl border border-divider shrink-0 mx-2 shadow-sm">
                             <span className="text-foreground font-bold text-sm">{t('filters_label')}</span>
-                            <Select label={t('filter_type')} selectedKeys={[filterType]} onChange={(e) => setFilterType(e.target.value)} size="sm" className="w-32" variant="bordered">
-                                <SelectItem key="ALL">{t('filter_all')}</SelectItem>
-                                <SelectItem key="TASK">📝 {t('type_task')}</SelectItem>
-                                <SelectItem key="FEATURE">🚀 {t('type_feature')}</SelectItem>
-                                <SelectItem key="BUG">🐛 {t('type_bug')}</SelectItem>
+                            
+                            <Select 
+                                label={t('filter_type')} 
+                                selectedKeys={new Set([filterType])} 
+                                onSelectionChange={(keys) => {
+                                    const selected = Array.from(keys)[0] as string;
+                                    if (selected) setFilterType(selected);
+                                }}
+                                size="sm" 
+                                className="w-32" 
+                                variant="bordered"
+                            >
+                                <SelectItem key="ALL" textValue={t('filter_all') as string}>{t('filter_all')}</SelectItem>
+                                <SelectItem key="TASK" textValue={`📝 ${t('type_task')}`}>📝 {t('type_task')}</SelectItem>
+                                <SelectItem key="FEATURE" textValue={`🚀 ${t('type_feature')}`}>🚀 {t('type_feature')}</SelectItem>
+                                <SelectItem key="BUG" textValue={`🐛 ${t('type_bug')}`}>🐛 {t('type_bug')}</SelectItem>
                             </Select>
-                            <Select label={t('filter_assignee')} selectedKeys={[filterAssignee]} onChange={(e) => setFilterAssignee(e.target.value)} size="sm" className="w-48" variant="bordered">
+                            
+                            <Select 
+                                label={t('filter_assignee')} 
+                                selectedKeys={new Set([filterAssignee])} 
+                                onSelectionChange={(keys) => {
+                                    const selected = Array.from(keys)[0] as string;
+                                    if (selected) setFilterAssignee(selected);
+                                }}
+                                size="sm" 
+                                className="w-48" 
+                                variant="bordered"
+                            >
                                 {["ALL", ...uniqueAssignees].map((email) => (
-                                    <SelectItem key={email as string}>{email === "ALL" ? t('filter_everyone') : (email as string)}</SelectItem>
+                                    <SelectItem 
+                                        key={email as string} 
+                                        textValue={email === "ALL" ? (t('filter_everyone') as string) : (email as string)}
+                                    >
+                                        {email === "ALL" ? t('filter_everyone') : (email as string)}
+                                    </SelectItem>
                                 ))}
                             </Select>
+                            
                             {(filterType !== "ALL" || filterAssignee !== "ALL") && (
                                 <Button size="sm" color="danger" variant="flat" onPress={() => { setFilterType("ALL"); setFilterAssignee("ALL"); }}>{t('clear_filters')}</Button>
                             )}
@@ -461,11 +485,10 @@ export default function ProjectBoardPage() {
 
                 {activeTab === "estadistiques" && (
                     <div className="flex-grow overflow-y-auto">
-                        <ProjectAnalytics tasks={tasks} />
+                        <ProjectAnalytics tasks={tasks} sprints={sprints} />
                     </div>
                 )}
                 
-                {/* ELS MODALS (FORMULARIS) */}
                 <CreateTaskModal 
                     isOpen={isCreateOpen} 
                     onOpenChange={onCreateOpenChange} 
@@ -504,7 +527,6 @@ export default function ProjectBoardPage() {
                     }} 
                 />
 
-                {/* NOU MODAL DE CONFIRMACIÓ GENÈRIC PER PROJECT BOARD */}
                 {confirmData && (
                     <ConfirmModal
                         isOpen={confirmData.isOpen}
