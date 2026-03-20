@@ -20,7 +20,8 @@ import { ConfirmModal } from '../components/ConfirmModal';
 import { getInitials } from '../utils/stringUtils';
 import { ProjectAnalytics } from '../components/ProjectAnalytics';
 import { ProjectActivity } from '../components/ProjectActivity'; 
-import { ProjectRanking } from '../components/ProjectRanking'; // NOU: Importem el rànquing
+import { ProjectRanking } from '../components/ProjectRanking';
+import { SprintSummaryStories, type StoryData } from '../components/SprintSummaryStories';
 
 const COLUMNS_KEYS = [
     { id: TaskStatus.BACKLOG, titleKey: "column_backlog", color: "default" },
@@ -65,6 +66,9 @@ export default function ProjectBoardPage() {
     
     const [activeTab, setActiveTab] = useState("tablero");
     const [startingSprint, setStartingSprint] = useState<number | null>(null);
+
+    const [isStoryOpen, setIsStoryOpen] = useState(false);
+    const [storyData, setStoryData] = useState<StoryData | null>(null);
 
     const [confirmData, setConfirmData] = useState<{
         isOpen: boolean, 
@@ -127,6 +131,7 @@ export default function ProjectBoardPage() {
                     setSprints(prev => prev.filter(s => s.id !== sprintId));
                     setTasks(prev => prev.map(t => t.sprintId === sprintId ? { ...t, sprintId: null } : t));
                     toast.success(t('success_delete_sprint', { defaultValue: 'Sprint esborrat correctament' }));
+                    setConfirmData(null);
                 } catch (error) {
                     console.error("Error esborrant sprint", error);
                     toast.error(t('error_delete_sprint')); 
@@ -144,10 +149,42 @@ export default function ProjectBoardPage() {
             color: "success",
             action: async () => {
                 try {
+                    const sprintToComplete = sprints.find(s => s.id === sprintId);
+                    const sprintTasks = tasks.filter(t => t.sprintId === sprintId);
+                    const completedCount = sprintTasks.filter(t => t.status === 'DONE').length;
+                    const pendingCount = sprintTasks.length - completedCount;
+
+                    const assigneeCounts: Record<string, number> = {};
+                    sprintTasks.filter(t => t.status === 'DONE').forEach(t => {
+                        const name = t.assigneeName || t.assigneeEmail || 'Equip';
+                        assigneeCounts[name] = (assigneeCounts[name] || 0) + 1;
+                    });
+                    
+                    let mvpName = "L'equip sencer";
+                    let maxTasks = 0;
+                    Object.entries(assigneeCounts).forEach(([name, count]) => {
+                        if (count > maxTasks && name !== 'Equip') {
+                            maxTasks = count;
+                            mvpName = name;
+                        }
+                    });
+
+                    setStoryData({
+                        sprintName: sprintToComplete?.name || 'Sprint',
+                        completedCount,
+                        pendingCount,
+                        mvpName,
+                        mvpTasks: maxTasks > 0 ? maxTasks : completedCount
+                    });
+                    
+                    setConfirmData(null); 
+                    
+                    setIsStoryOpen(true);
+
                     const updatedSprint = await sprintService.completeSprint(id, sprintId);
                     setSprints(prev => prev.map(s => s.id === sprintId ? updatedSprint : s));
                     setActiveTab("backlog");
-                    toast.success(t('success_complete_sprint'));
+
                 } catch (error) {
                     console.error("Error completant sprint", error);
                     toast.error(t('error_complete_sprint', { defaultValue: "No s'ha pogut completar l'sprint." }));
@@ -208,10 +245,7 @@ export default function ProjectBoardPage() {
     if (loading) return <div className="flex h-screen items-center justify-center bg-background"><Spinner size="lg" /></div>;
 
     return (
-        <MainLayout 
-            username={user?.username} 
-            email={user?.email}
-        >
+        <MainLayout username={user?.username} email={user?.email}>
             <div className="flex flex-col h-full gap-5">
                 
                 <div className="flex justify-between items-center px-2 text-foreground">
@@ -310,7 +344,6 @@ export default function ProjectBoardPage() {
                                 <h2 className="text-xl font-bold text-foreground mb-4">{t('unassigned_tasks')}</h2>
                                 <Droppable droppableId="backlog">
                                     {(provided) => {
-                                        // Aquest és l'arranjament perquè les tasques DONE no surtin al backlog
                                         const backlogTasks = tasks.filter(t => 
                                             !t.parentTaskId && 
                                             (!t.sprintId || sprints.find(s => s.id === t.sprintId)?.status === 'CLOSED') &&
@@ -493,16 +526,13 @@ export default function ProjectBoardPage() {
 
                 {activeTab === "estadistiques" && (
                     <div className="flex-grow overflow-y-auto p-2">
-                        {/* Posem el rànquing a dalt de tot com a novetat estrella */}
                         <div className="mb-6">
                             <ProjectRanking projectId={id!} />
                         </div>
-                        {/* Les gràfiques que ja teníem a sota */}
                         <ProjectAnalytics tasks={tasks} sprints={sprints} />
                     </div>
                 )}
 
-                {/* NOVA SECCIÓ D'ACTIVITAT */}
                 {activeTab === "activitat" && (
                     <div className="flex-grow overflow-y-auto p-2">
                         <ProjectActivity projectId={id!} />
@@ -559,6 +589,12 @@ export default function ProjectBoardPage() {
                         color={confirmData.color}
                     />
                 )}
+
+                <SprintSummaryStories 
+                    isOpen={isStoryOpen} 
+                    onClose={() => setIsStoryOpen(false)} 
+                    data={storyData} 
+                />
 
             </div>
         </MainLayout>
