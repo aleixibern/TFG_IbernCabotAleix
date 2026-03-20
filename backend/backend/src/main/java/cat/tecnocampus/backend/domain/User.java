@@ -17,7 +17,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "app_users") // O el nom que tinguis a la taula
+@Table(name = "app_users")
 public class User implements UserDetails {
 
     @Id
@@ -31,7 +31,6 @@ public class User implements UserDetails {
 
     private String password;
 
-    // ... altres camps com roles ...
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -43,16 +42,11 @@ public class User implements UserDetails {
         return password;
     }
 
-    // --- EL CANVI CLAU ESTÀ AQUÍ ---
     @Override
     public String getUsername() {
-
         return email;
     }
 
-
-    // IMPORTANT: Afegeix aquest getter manual si Lombok no te'l genera pel camp 'username' visual
-    // perquè acabem de sobreescriure el getUsername() de UserDetails.
     public String getRealUsername() {
         return username;
     }

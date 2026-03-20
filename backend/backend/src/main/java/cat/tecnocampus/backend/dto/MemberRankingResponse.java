@@ -5,10 +5,9 @@ import lombok.Data;
 
 @Data
 @Builder
-public class UserResponse {
-    private Long id;
+public class MemberRankingResponse {
     private String username;
     private String email;
-    private String profilePictureUrl;
-
+    private Integer level;
+    private Integer xp;
 }

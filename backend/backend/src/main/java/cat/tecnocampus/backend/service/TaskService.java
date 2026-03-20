@@ -4,12 +4,14 @@ import cat.tecnocampus.backend.domain.Project;
 import cat.tecnocampus.backend.domain.Task;
 import cat.tecnocampus.backend.domain.TaskStatus;
 import cat.tecnocampus.backend.domain.User;
+import cat.tecnocampus.backend.domain.UserProjectStats;
 import cat.tecnocampus.backend.dto.TaskRequest;
 import cat.tecnocampus.backend.dto.TaskResponse;
 import cat.tecnocampus.backend.repository.ProjectRepository;
 import cat.tecnocampus.backend.repository.SprintRepository;
 import cat.tecnocampus.backend.repository.TaskRepository;
 import cat.tecnocampus.backend.repository.UserRepository;
+import cat.tecnocampus.backend.repository.UserProjectStatsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -25,9 +27,67 @@ public class TaskService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final SprintRepository sprintRepository;
-
-    // NOU: Injectem el servei d'activitat
     private final ActivityLogService activityLogService;
+    private final UserProjectStatsRepository userProjectStatsRepository;
+
+    // --- FUNCIÓ AUXILIAR: Calcular XP per prioritat ---
+    private int calculateXp(Task task) {
+        if (task.getPriority() == null) return 10;
+        switch (task.getPriority()) {
+            case LOW: return 10;
+            case MEDIUM: return 20;
+            case HIGH: return 30;
+            case URGENT: return 50;
+            default: return 10;
+        }
+    }
+
+    // --- SUMAR XP ---
+    private void awardExperiencePoints(Task task, User currentUser) {
+        User userToReward = task.getAssignee() != null ? task.getAssignee() : currentUser;
+        Project project = task.getProject();
+
+        UserProjectStats stats = userProjectStatsRepository.findByUserEmailAndProjectId(userToReward.getEmail(), project.getId())
+                .orElse(UserProjectStats.builder().user(userToReward).project(project).level(1).xp(0).build());
+
+        int xpToAward = calculateXp(task);
+        int newXp = stats.getXp() + xpToAward;
+        int currentLevel = stats.getLevel();
+
+        if (newXp >= 100) {
+            currentLevel++;
+            newXp = newXp - 100;
+        }
+
+        stats.setXp(newXp);
+        stats.setLevel(currentLevel);
+        userProjectStatsRepository.save(stats);
+    }
+
+    private void removeExperiencePoints(Task task, User currentUser) {
+        User userToReward = task.getAssignee() != null ? task.getAssignee() : currentUser;
+        Project project = task.getProject();
+
+        UserProjectStats stats = userProjectStatsRepository.findByUserEmailAndProjectId(userToReward.getEmail(), project.getId())
+                .orElse(UserProjectStats.builder().user(userToReward).project(project).level(1).xp(0).build());
+
+        int xpToRemove = calculateXp(task);
+        int newXp = stats.getXp() - xpToRemove;
+        int currentLevel = stats.getLevel();
+
+        if (newXp < 0 && currentLevel > 1) {
+            currentLevel--;
+            newXp = 100 + newXp;
+        }
+
+        if (currentLevel == 1 && newXp < 0) {
+            newXp = 0;
+        }
+
+        stats.setXp(newXp);
+        stats.setLevel(currentLevel);
+        userProjectStatsRepository.save(stats);
+    }
 
     public TaskResponse createTask(Long projectId, TaskRequest request, String userEmail) {
         Project project = projectRepository.findById(projectId)
@@ -74,7 +134,6 @@ public class TaskService {
 
         Task savedTask = taskRepository.save(task);
 
-        // NOU: Registrem la creació de la tasca
         activityLogService.logAction(project, savedTask, currentUser, "ha creat la tasca", null, savedTask.getStatus().name());
 
         return mapToResponse(savedTask);
@@ -120,7 +179,12 @@ public class TaskService {
         task.setStatus(nouEstat);
         Task savedTask = taskRepository.save(task);
 
-        // NOU: Registrem el canvi d'estat
+        if (nouEstat == cat.tecnocampus.backend.domain.TaskStatus.DONE && !oldStatusString.equals("DONE")) {
+            awardExperiencePoints(savedTask, currentUser);
+        } else if (oldStatusString.equals("DONE") && nouEstat != cat.tecnocampus.backend.domain.TaskStatus.DONE) {
+            removeExperiencePoints(savedTask, currentUser);
+        }
+
         activityLogService.logAction(project, savedTask, currentUser, "ha actualitzat el camp 'Estat' en", oldStatusString, nouEstat.name());
 
         return mapToResponse(savedTask);
@@ -148,9 +212,10 @@ public class TaskService {
         }
 
         String taskTitle = task.getTitle();
+
+
         taskRepository.delete(task);
 
-        // NOU: Registrem que s'ha esborrat la tasca (passem null a la tasca perquè ja no existeix)
         activityLogService.logAction(project, null, currentUser, "ha eliminat la tasca '" + taskTitle + "'", null, null);
     }
 
@@ -238,7 +303,6 @@ public class TaskService {
 
         Task savedTask = taskRepository.save(task);
 
-        // NOU: Registrem una edició general de la tasca
         activityLogService.logAction(project, savedTask, currentUser, "ha editat detalls de", null, null);
 
         return mapToResponse(savedTask);

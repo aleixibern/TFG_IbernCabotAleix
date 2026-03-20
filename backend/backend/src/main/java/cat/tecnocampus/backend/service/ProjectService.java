@@ -3,9 +3,11 @@ package cat.tecnocampus.backend.service;
 import cat.tecnocampus.backend.domain.Project;
 import cat.tecnocampus.backend.domain.ProjectInvitation;
 import cat.tecnocampus.backend.domain.User;
+import cat.tecnocampus.backend.domain.UserProjectStats;
 import cat.tecnocampus.backend.dto.*;
 import cat.tecnocampus.backend.repository.ProjectInvitationRepository;
 import cat.tecnocampus.backend.repository.ProjectRepository;
+import cat.tecnocampus.backend.repository.UserProjectStatsRepository;
 import cat.tecnocampus.backend.repository.UserRepository;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final ProjectInvitationRepository invitationRepository;
+    private final UserProjectStatsRepository userProjectStatsRepository;
 
     public ProjectResponse createProject(ProjectRequest request, String userEmail) {
         User owner = userRepository.findByEmail(userEmail)
@@ -158,6 +161,7 @@ public class ProjectService {
 
         invitationRepository.delete(invitation);
     }
+
     @Transactional
     public UserResponse updateUserProfile(String email, UserUpdateRequest request) {
         User user = userRepository.findByEmail(email)
@@ -174,5 +178,35 @@ public class ProjectService {
                 .username(updatedUser.getUsername())
                 .email(updatedUser.getEmail())
                 .build();
+    }
+
+    public List<MemberRankingResponse> getProjectRanking(Long projectId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Projecte no trobat"));
+
+        List<User> allMembers = new java.util.ArrayList<>(project.getMembers());
+        if (!allMembers.contains(project.getOwner())) {
+            allMembers.add(project.getOwner());
+        }
+
+        List<UserProjectStats> stats = userProjectStatsRepository.findByProjectId(projectId);
+
+        return allMembers.stream().map(user -> {
+                    UserProjectStats userStat = stats.stream()
+                            .filter(s -> s.getUser().getId().equals(user.getId()))
+                            .findFirst().orElse(null);
+
+                    return MemberRankingResponse.builder()
+                            .username(user.getRealUsername() != null ? user.getRealUsername() : user.getUsername())
+                            .email(user.getEmail())
+                            .level(userStat != null ? userStat.getLevel() : 1)
+                            .xp(userStat != null ? userStat.getXp() : 0)
+                            .build();
+                })
+                .sorted((a, b) -> {
+                    if (!a.getLevel().equals(b.getLevel())) return b.getLevel() - a.getLevel();
+                    return b.getXp() - a.getXp();
+                })
+                .collect(Collectors.toList());
     }
 }

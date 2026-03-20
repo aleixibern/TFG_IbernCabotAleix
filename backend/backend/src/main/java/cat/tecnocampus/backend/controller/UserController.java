@@ -22,7 +22,7 @@ public class UserController {
 
     @GetMapping("/me")
     public ResponseEntity<UserResponse> getCurrentUser(Principal principal) {
-        String email = principal.getName(); // Ara això torna l'email correctament
+        String email = principal.getName();
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuari no trobat"));
@@ -32,6 +32,7 @@ public class UserController {
                 .email(user.getEmail())
                 .build());
     }
+
     @PutMapping("/me")
     public ResponseEntity<UserResponse> updateProfile(
             @RequestBody UserUpdateRequest request,

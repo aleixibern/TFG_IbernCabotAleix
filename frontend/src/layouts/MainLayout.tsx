@@ -14,7 +14,6 @@ export const MainLayout = ({ children, username, email }: MainLayoutProps) => {
   const location = useLocation(); 
   const navigate = useNavigate();
   
-  // Hooks per als nous sistemes
   const { t, i18n } = useTranslation();
   const { theme, setTheme } = useTheme();
 
@@ -23,7 +22,6 @@ export const MainLayout = ({ children, username, email }: MainLayoutProps) => {
     navigate("/");
   };
 
-  // Icones SVG professionals per als botons
   const SunIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
@@ -50,7 +48,6 @@ export const MainLayout = ({ children, username, email }: MainLayoutProps) => {
             className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" 
             onClick={() => navigate('/dashboard')}
           >
-            {/* Icona SVG professional de Lynx */}
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
               <path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/>
             </svg>
@@ -73,7 +70,6 @@ export const MainLayout = ({ children, username, email }: MainLayoutProps) => {
 
         <NavbarContent justify="end" className="gap-2 items-center">
           
-          {/* Botó per canviar el Tema (Light / Dark) */}
           <Button 
             isIconOnly 
             variant="light" 
@@ -83,7 +79,6 @@ export const MainLayout = ({ children, username, email }: MainLayoutProps) => {
             {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
           </Button>
 
-          {/* Desplegable per canviar d'Idioma */}
           <Dropdown placement="bottom-end">
             <DropdownTrigger>
               <Button isIconOnly variant="light" aria-label="Language">
@@ -100,7 +95,6 @@ export const MainLayout = ({ children, username, email }: MainLayoutProps) => {
             </DropdownMenu>
           </Dropdown>
           
-          {/* Desplegable de l'Usuari */}
           <Dropdown placement="bottom-end">
             <DropdownTrigger>
               <Avatar

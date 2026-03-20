@@ -1,10 +1,7 @@
 package cat.tecnocampus.backend.controller;
 
-import cat.tecnocampus.backend.dto.InvitationResponse;
-import cat.tecnocampus.backend.dto.ProjectRequest;
-import cat.tecnocampus.backend.dto.ProjectResponse;
+import cat.tecnocampus.backend.dto.*;
 import cat.tecnocampus.backend.service.ActivityLogService;
-import cat.tecnocampus.backend.dto.ActivityLogResponse;
 import cat.tecnocampus.backend.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -35,7 +32,7 @@ public class ProjectController {
     @GetMapping
     public ResponseEntity<List<ProjectResponse>> getMyProjects() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String email = auth.getName(); // <--- Aquí ja tens l'email guardat!
+        String email = auth.getName();
 
         return ResponseEntity.ok(projectService.getProjectsByUser(email));
     }
@@ -80,5 +77,10 @@ public class ProjectController {
     @GetMapping("/{id}/activity")
     public ResponseEntity<List<ActivityLogResponse>> getProjectActivity(@PathVariable Long id, Principal principal) {
         return ResponseEntity.ok(activityLogService.getProjectActivity(id));
+    }
+
+    @GetMapping("/{id}/ranking")
+    public ResponseEntity<List<MemberRankingResponse>> getProjectRanking(@PathVariable Long id) {
+        return ResponseEntity.ok(projectService.getProjectRanking(id));
     }
 }

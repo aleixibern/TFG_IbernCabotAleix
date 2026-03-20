@@ -19,7 +19,8 @@ import { CreateSprintModal } from '../components/CreateSprintModal';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { getInitials } from '../utils/stringUtils';
 import { ProjectAnalytics } from '../components/ProjectAnalytics';
-import { ProjectActivity } from '../components/ProjectActivity'; // NOU: Importem l'historial d'activitat
+import { ProjectActivity } from '../components/ProjectActivity'; 
+import { ProjectRanking } from '../components/ProjectRanking'; // NOU: Importem el rànquing
 
 const COLUMNS_KEYS = [
     { id: TaskStatus.BACKLOG, titleKey: "column_backlog", color: "default" },
@@ -207,7 +208,10 @@ export default function ProjectBoardPage() {
     if (loading) return <div className="flex h-screen items-center justify-center bg-background"><Spinner size="lg" /></div>;
 
     return (
-        <MainLayout username={user?.username} email={user?.email}>
+        <MainLayout 
+            username={user?.username} 
+            email={user?.email}
+        >
             <div className="flex flex-col h-full gap-5">
                 
                 <div className="flex justify-between items-center px-2 text-foreground">
@@ -488,7 +492,12 @@ export default function ProjectBoardPage() {
                 )}
 
                 {activeTab === "estadistiques" && (
-                    <div className="flex-grow overflow-y-auto">
+                    <div className="flex-grow overflow-y-auto p-2">
+                        {/* Posem el rànquing a dalt de tot com a novetat estrella */}
+                        <div className="mb-6">
+                            <ProjectRanking projectId={id!} />
+                        </div>
+                        {/* Les gràfiques que ja teníem a sota */}
                         <ProjectAnalytics tasks={tasks} sprints={sprints} />
                     </div>
                 )}
