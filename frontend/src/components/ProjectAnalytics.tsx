@@ -47,7 +47,6 @@ export const ProjectAnalytics = ({ tasks, sprints = [] }: Props) => {
             counts[name] = (counts[name] || 0) + 1;
         });
         
-        // Fem servir una clau fixa "tasques" perquè TypeScript pugui fer matemàtiques
         return Object.keys(counts).map(key => ({
             nom: key,
             tasques: counts[key]
@@ -73,7 +72,6 @@ export const ProjectAnalytics = ({ tasks, sprints = [] }: Props) => {
                 else if (task.status === 'DONE') acabades++;
             });
 
-            // Fem servir claus fixes internes per evitar errors TS
             return {
                 name: sprint.name,
                 pendents: pendents,
@@ -152,7 +150,6 @@ export const ProjectAnalytics = ({ tasks, sprints = [] }: Props) => {
                                     <XAxis dataKey="nom" stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
                                     <YAxis stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
                                     <Tooltip cursor={{ fill: cursorFill }} contentStyle={{ backgroundColor: tooltipBg, borderColor: tooltipBorder, borderRadius: '8px', color: tooltipText }} />
-                                    {/* Passem el t() per la propietat name perquè Recharts ho tradueixi */}
                                     <Bar dataKey="tasques" name={t('type_task')} fill="#006fee" radius={[4, 4, 0, 0]} barSize={40} />
                                 </BarChart>
                             </ResponsiveContainer>
@@ -172,11 +169,13 @@ export const ProjectAnalytics = ({ tasks, sprints = [] }: Props) => {
                             <div className="h-[300px] w-full mt-4">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={sprintReportData} margin={{ top: 20, right: 30, left: -20, bottom: 5 }}>
-                                        <XAxis dataKey="name" stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
+                                        {/* Aquí està la clau: amaguem el text de l'eix X (tick={false}) */}
+                                        <XAxis dataKey="name" stroke="#71717a" tick={false} tickLine={false} axisLine={false} />
                                         <YAxis stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
                                         <Tooltip cursor={{ fill: cursorFill }} contentStyle={{ backgroundColor: tooltipBg, borderColor: tooltipBorder, borderRadius: '8px', color: tooltipText }} />
                                         <Legend wrapperStyle={{ paddingTop: '10px' }}/>
-                                        <Bar dataKey="pendents" name={t('pending_tasks')} stackId="a" fill={theme === 'dark' ? '#3f3f46' : '#a1a1aa'} radius={[0, 0, 4, 4]} />
+                                        
+                                        <Bar dataKey="pendents" name={t('pending_tasks')} stackId="a" fill={theme === 'dark' ? '#3f3f46' : '#a1a1aa'} />
                                         <Bar dataKey="enCurs" name={t('in_progress_tasks')} stackId="a" fill="#006fee" />
                                         <Bar dataKey="acabades" name={t('completed_tasks')} stackId="a" fill="#17c964" radius={[4, 4, 0, 0]} />
                                     </BarChart>

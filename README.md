@@ -6,14 +6,14 @@
 
 Amb una visió ràpida i precisa (com un linx), l'aplicació permet als equips organitzar el seu flux de treball, gestionar dependències complexes entre tasques i mantenir tot el context centralitzat.
 
-## ✨ Funcionalitats Principals
+##  Funcionalitats Principals
 * **Taulell Kanban Dinàmic:** Gestió d'estats de les tasques (Backlog, Ready, In Progress, In Review, Done) mitjançant funcionalitat *Drag & Drop*.
 * **Gestió d'Sprints:** Planificació, inici i tancament d'Sprints actius per focalitzar la feina de l'equip.
-* **🔒 Dependències Estrictes:** Lògica de negoci avançada que bloqueja l'avanç de les tasques si les seves dependències no estan completades.
-* **📎 Enllaços Externs i Subtasques:** Cada tasca pot contenir referències a eines externes (GitHub, Figma, Google Drive) i dividir-se en subtasques més petites.
+* **Dependències Estrictes:** Lògica de negoci avançada que bloqueja l'avanç de les tasques si les seves dependències no estan completades.
+* **Enllaços Externs i Subtasques:** Cada tasca pot contenir referències a eines externes (GitHub, Figma, Google Drive) i dividir-se en subtasques més petites.
 * **Autenticació Segura:** Integració completa amb Google OAuth 2.0 i seguretat basada en JWT.
 
-## 🛠️ Stack Tecnològic
+##  Stack Tecnològic
 * **Frontend:** React, TypeScript, Vite, HeroUI i TailwindCSS.
 * **Backend:** Java 21, Spring Boot, Spring Security i Maven.
 * **Base de Dades:** PostgreSQL.
@@ -21,7 +21,7 @@ Amb una visió ràpida i precisa (com un linx), l'aplicació permet als equips o
 
 ------------------------------------------------------------------
 
-\# Instal·lació i Execució Ràpida (Docker) 🐳
+\# Instal·lació i Execució Ràpida (Docker) 
 
 
 

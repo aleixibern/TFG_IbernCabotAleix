@@ -14,6 +14,7 @@ interface Props {
     projectId: string;
     onTaskUpdated: (task: Task) => void;
     onTaskDeleted: (taskId: number) => void;
+    onStartFocus?: (task: Task) => void; // NOU: Prop per arrencar el Mode Zen
 }
 
 const getInitials = (name?: string) => {
@@ -25,7 +26,7 @@ const getInitials = (name?: string) => {
     return cleanName.substring(0, 2).toUpperCase();
 };
 
-export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpdated, onTaskDeleted }: Props) => {
+export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpdated, onTaskDeleted, onStartFocus }: Props) => {
     const { t } = useTranslation();
 
     const [title, setTitle] = useState('');
@@ -242,8 +243,31 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
                 <ModalContent>
                     {(onClose) => (
                         <>
-                            <ModalHeader>✏️ {t('edit_task_title')}</ModalHeader>
+                            <ModalHeader className="flex justify-between items-center w-full">
+                                <span>✏️ {t('edit_task_title')}</span>
+                            </ModalHeader>
                             <ModalBody className="gap-4 py-6">
+                                {/* NOU: Botó per arrencar el mode Zen */}
+                                {onStartFocus && (
+                                    <div className="w-full bg-zinc-950 text-white rounded-xl p-4 flex justify-between items-center border border-zinc-800 mb-2">
+                                        <div>
+                                            <h4 className="font-bold text-md">Mode Focus</h4>
+                                            <p className="text-xs text-zinc-400">Concentra't en aquesta tasca amb un compte enrere de 25m.</p>
+                                        </div>
+                                        <Button 
+                                            color="warning" 
+                                            variant="solid" 
+                                            onPress={() => {
+                                                onClose(); // Tanquem aquest modal
+                                                onStartFocus(task); // Obrim el mode Zen
+                                            }}
+                                            className="font-bold shadow-[0_0_15px_rgba(245,165,36,0.2)]"
+                                        >
+                                            🧘‍♂️ Començar a treballar
+                                        </Button>
+                                    </div>
+                                )}
+
                                 <Input label={t('task_title')} value={title} onValueChange={setTitle} variant="bordered" />
                                 <Textarea label={t('task_description')} value={description} onValueChange={setDescription} variant="bordered" />
                                 

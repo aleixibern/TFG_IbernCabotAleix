@@ -22,6 +22,7 @@ import { ProjectAnalytics } from '../components/ProjectAnalytics';
 import { ProjectActivity } from '../components/ProjectActivity'; 
 import { ProjectRanking } from '../components/ProjectRanking';
 import { SprintSummaryStories, type StoryData } from '../components/SprintSummaryStories';
+import { ZenMode } from '../components/ZenMode';
 
 const COLUMNS_KEYS = [
     { id: TaskStatus.BACKLOG, titleKey: "column_backlog", color: "default" },
@@ -69,6 +70,9 @@ export default function ProjectBoardPage() {
 
     const [isStoryOpen, setIsStoryOpen] = useState(false);
     const [storyData, setStoryData] = useState<StoryData | null>(null);
+
+    const [isZenModeOpen, setIsZenModeOpen] = useState(false);
+    const [zenTask, setZenTask] = useState<Task | null>(null);
 
     const [confirmData, setConfirmData] = useState<{
         isOpen: boolean, 
@@ -563,6 +567,10 @@ export default function ProjectBoardPage() {
                         setTasks(tasks.filter(t => t.id !== tid));
                         toast.success(t('task_deleted_success', { defaultValue: 'Tasca esborrada' })); 
                     }} 
+                    onStartFocus={(task) => {
+                        setZenTask(task);
+                        setIsZenModeOpen(true);
+                    }}
                 />
                 
                 <InviteMemberModal isOpen={isInviteOpen} onOpenChange={onInviteOpenChange} projectId={id!} />
@@ -594,6 +602,12 @@ export default function ProjectBoardPage() {
                     isOpen={isStoryOpen} 
                     onClose={() => setIsStoryOpen(false)} 
                     data={storyData} 
+                />
+
+                <ZenMode 
+                    isOpen={isZenModeOpen} 
+                    task={zenTask} 
+                    onClose={() => setIsZenModeOpen(false)} 
                 />
 
             </div>
