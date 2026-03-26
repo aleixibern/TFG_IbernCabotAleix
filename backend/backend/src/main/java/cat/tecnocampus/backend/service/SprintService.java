@@ -3,6 +3,7 @@ package cat.tecnocampus.backend.service;
 import cat.tecnocampus.backend.domain.Project;
 import cat.tecnocampus.backend.domain.Sprint;
 import cat.tecnocampus.backend.domain.SprintStatus;
+import cat.tecnocampus.backend.domain.TaskStatus;
 import cat.tecnocampus.backend.dto.SprintRequest;
 import cat.tecnocampus.backend.dto.SprintResponse;
 import cat.tecnocampus.backend.repository.ProjectRepository;
@@ -12,7 +13,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -83,7 +86,6 @@ public class SprintService {
         }
 
         sprintToStart.setStatus(SprintStatus.ACTIVE);
-
         sprintToStart.setStartDate(java.time.LocalDate.now());
 
         return mapToResponse(sprintRepository.save(sprintToStart));
@@ -97,7 +99,43 @@ public class SprintService {
 
     public SprintResponse completeSprint(Long projectId, Long sprintId, String userEmail) {
         Sprint sprint = sprintRepository.findById(sprintId).orElseThrow(() -> new RuntimeException("Sprint no trobat"));
+
+        // Llista de tasques de l'sprint actual
+        List<cat.tecnocampus.backend.domain.Task> sprintTasks = taskRepository.findBySprintId(sprintId);
+
+        int completedCount = 0;
+        int pendingCount = 0;
+        Map<String, Integer> assigneeCounts = new HashMap<>();
+
+        for (cat.tecnocampus.backend.domain.Task task : sprintTasks) {
+            if (task.getStatus() == TaskStatus.DONE) {
+                completedCount++;
+                String assigneeName = task.getAssignee() != null ? task.getAssignee().getUsername() : "Equip";
+                assigneeCounts.put(assigneeName, assigneeCounts.getOrDefault(assigneeName, 0) + 1);
+            } else {
+                pendingCount++;
+                // LÒGICA NOVA: Si no està DONE, desvinculem la tasca de l'Sprint i torna al BACKLOG
+                task.setSprint(null);
+                task.setStatus(TaskStatus.BACKLOG);
+                taskRepository.save(task);
+            }
+        }
+
+        String mvpName = "L'equip sencer";
+        int maxTasks = 0;
+        for (Map.Entry<String, Integer> entry : assigneeCounts.entrySet()) {
+            if (entry.getValue() > maxTasks && !entry.getKey().equals("Equip")) {
+                maxTasks = entry.getValue();
+                mvpName = entry.getKey();
+            }
+        }
+
+        // Guardem el resum a l'Sprint i el tanquem
         sprint.setStatus(SprintStatus.CLOSED);
+        sprint.setCompletedTasksCount(completedCount);
+        sprint.setPendingTasksCount(pendingCount);
+        sprint.setMvpUserName(mvpName);
+
         return mapToResponse(sprintRepository.save(sprint));
     }
 
@@ -123,6 +161,9 @@ public class SprintService {
                 .endDate(sprint.getEndDate())
                 .projectId(sprint.getProject().getId())
                 .status(sprint.getStatus() != null ? sprint.getStatus().name() : "PLANNED")
+                .completedTasks(sprint.getCompletedTasksCount())
+                .pendingTasks(sprint.getPendingTasksCount())
+                .mvpUserName(sprint.getMvpUserName())
                 .build();
     }
 }

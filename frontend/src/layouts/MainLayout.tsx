@@ -95,6 +95,8 @@ export const MainLayout = ({ children, username, email }: MainLayoutProps) => {
             </DropdownMenu>
           </Dropdown>
           
+          {/* El badge d'XP estava aquí, i l'hem esborrat perquè quedi net. */}
+          
           <Dropdown placement="bottom-end">
             <DropdownTrigger>
               <Avatar

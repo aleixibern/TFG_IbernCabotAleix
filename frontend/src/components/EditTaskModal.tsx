@@ -3,8 +3,10 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input
 import { useTranslation } from 'react-i18next';
 import { taskService } from '../services/taskService';
 import { commentService } from '../services/commentService';
+import { epicService } from '../services/epicService';
 import type { Task } from '../types/Task';
 import type { Comment } from '../types/Comment';
+import type { Epic } from '../types/Epic';
 import { ConfirmModal } from './ConfirmModal'; 
 
 interface Props {
@@ -14,7 +16,7 @@ interface Props {
     projectId: string;
     onTaskUpdated: (task: Task) => void;
     onTaskDeleted: (taskId: number) => void;
-    onStartFocus?: (task: Task) => void; // NOU: Prop per arrencar el Mode Zen
+    onStartFocus?: (task: Task) => void; 
 }
 
 const getInitials = (name?: string) => {
@@ -35,6 +37,8 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
     const [priority, setPriority] = useState('MEDIUM');
     const [dueDate, setDueDate] = useState('');
     const [assigneeEmail, setAssigneeEmail] = useState('');
+    const [epicId, setEpicId] = useState('');
+    const [epics, setEpics] = useState<Epic[]>([]);
     const [loading, setLoading] = useState(false);
 
     const [links, setLinks] = useState<string[]>([]);
@@ -69,6 +73,7 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
             setAssigneeEmail(task.assigneeEmail || '');
             setSubtasks(task.subtasks || []);
             setLinks(task.links || []);
+            setEpicId(task.epic ? task.epic.id.toString() : '');
             
             if (task.dependencies) {
                 setDependencyIds(new Set(task.dependencies.map(d => d.id.toString())));
@@ -78,8 +83,18 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
 
             loadComments(task.id);
             loadAvailableTasks(task.id);
+            loadEpics();
         }
     }, [task, isOpen]);
+
+    const loadEpics = async () => {
+        try {
+            const data = await epicService.getEpicsByProject(projectId);
+            setEpics(data);
+        } catch (error) {
+            console.error("Error carregant èpiques", error);
+        }
+    };
 
     const loadComments = async (taskId: number) => {
         try {
@@ -127,7 +142,8 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
                 dueDate: dueDate || undefined, 
                 assigneeEmail: finalAssigneeEmail,
                 links: links,
-                dependencyIds: finalDependencyIds 
+                dependencyIds: finalDependencyIds,
+                epicId: epicId ? Number(epicId) : -1 
             });
             onTaskUpdated(updatedTask);
             onClose();
@@ -247,23 +263,22 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
                                 <span>✏️ {t('edit_task_title')}</span>
                             </ModalHeader>
                             <ModalBody className="gap-4 py-6">
-                                {/* NOU: Botó per arrencar el mode Zen */}
                                 {onStartFocus && (
                                     <div className="w-full bg-zinc-950 text-white rounded-xl p-4 flex justify-between items-center border border-zinc-800 mb-2">
                                         <div>
-                                            <h4 className="font-bold text-md">Mode Focus</h4>
-                                            <p className="text-xs text-zinc-400">Concentra't en aquesta tasca amb un compte enrere de 25m.</p>
+                                            <h4 className="font-bold text-md">{t('zen_mode_title')}</h4>
+                                            <p className="text-xs text-zinc-400">{t('zen_mode_desc')}</p>
                                         </div>
                                         <Button 
                                             color="warning" 
                                             variant="solid" 
                                             onPress={() => {
-                                                onClose(); // Tanquem aquest modal
-                                                onStartFocus(task); // Obrim el mode Zen
+                                                onClose();
+                                                onStartFocus(task);
                                             }}
                                             className="font-bold shadow-[0_0_15px_rgba(245,165,36,0.2)]"
                                         >
-                                            🧘‍♂️ Començar a treballar
+                                            {t('start_focus_btn')}
                                         </Button>
                                     </div>
                                 )}
@@ -280,6 +295,7 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
                                             if (selectedKey) setType(selectedKey);
                                         }} 
                                         variant="bordered"
+                                        className="flex-1"
                                     >
                                         <SelectItem key="TASK" textValue={`📝 ${t('type_task')}`}>📝 {t('type_task')}</SelectItem>
                                         <SelectItem key="FEATURE" textValue={`🚀 ${t('type_feature')}`}>🚀 {t('type_feature')}</SelectItem>
@@ -294,17 +310,42 @@ export const EditTaskModal = ({ isOpen, onOpenChange, task, projectId, onTaskUpd
                                             if (selectedKey) setPriority(selectedKey);
                                         }} 
                                         variant="bordered"
+                                        className="flex-1"
                                     >
                                         <SelectItem key="LOW" textValue={`🟢 ${t('priority_low')}`}>🟢 {t('priority_low')}</SelectItem>
                                         <SelectItem key="MEDIUM" textValue={`🟡 ${t('priority_medium')}`}>🟡 {t('priority_medium')}</SelectItem>
                                         <SelectItem key="HIGH" textValue={`🟠 ${t('priority_high')}`}>🟠 {t('priority_high')}</SelectItem>
                                         <SelectItem key="URGENT" textValue={`🔴 ${t('priority_urgent')}`}>🔴 {t('priority_urgent')}</SelectItem>
                                     </Select>
+
+                                    <Select 
+                                        label={t('epic_label')} 
+                                        placeholder={t('no_epic')}
+                                        selectedKeys={epicId ? new Set([epicId]) : new Set([])} 
+                                        onSelectionChange={(keys) => {
+                                            const selectedKey = Array.from(keys)[0] as string;
+                                            setEpicId(selectedKey || '');
+                                        }} 
+                                        variant="bordered"
+                                        className="flex-1"
+                                    >
+                                        {[
+                                            <SelectItem key="-1" textValue={t('no_epic')}>{t('no_epic')}</SelectItem>,
+                                            ...epics.map(e => (
+                                                <SelectItem key={e.id.toString()} textValue={e.title}>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="w-3 h-3 rounded-full" style={{ backgroundColor: e.color }}></span>
+                                                        <span>{e.title}</span>
+                                                    </div>
+                                                </SelectItem>
+                                            ))
+                                        ]}
+                                    </Select>
                                 </div>
 
                                 <div className="flex gap-4">
-                                    <Input type="date" label={t('task_due_date')} value={dueDate} onValueChange={setDueDate} variant="bordered" />
-                                    <Input label={t('task_assignee')} placeholder={t('assignee_placeholder')} value={assigneeEmail} onValueChange={setAssigneeEmail} variant="bordered" />
+                                    <Input type="date" label={t('task_due_date')} value={dueDate} onValueChange={setDueDate} variant="bordered" className="flex-1" />
+                                    <Input label={t('task_assignee')} placeholder={t('assignee_placeholder')} value={assigneeEmail} onValueChange={setAssigneeEmail} variant="bordered" className="flex-1" />
                                 </div>
 
                                 <Divider className="my-1 bg-divider" />

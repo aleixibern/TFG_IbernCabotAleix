@@ -68,13 +68,42 @@ const resources = {
       "type_feature": "Feature",
       "type_bug": "Bug",
 
-      // Estadístiques
+      // Estadístiques i Burndown Chart
       "unassigned": "Sense assignar",
       "no_data_stats": "No hi ha prou dades per generar estadístiques. Crea algunes tasques primer!",
       "global_status": "Estat Global del Projecte",
       "status_distribution": "Distribució de les {{count}} tasques per columna",
       "workload_per_member": "Càrrega de Treball per Membre",
       "tasks_assigned_to_user": "Tasques assignades a cada usuari",
+      "performance_board_title": "Tauler de Rendiment",
+      "performance_board_desc": "Analitza el projecte o viatja al passat per veure com van anar els Sprints.",
+      "select_view_label": "Selecciona la vista",
+      "global_view": "🌍 Visió Global (Projecte sencer)",
+      "sprint_achieved": "Aconseguit",
+      "sprint_closed_so_far": "Tancat fins ara",
+      "sprint_failed": "Fallat / Al Backlog",
+      "sprint_in_progress": "En Curs / Pendent",
+      "sprint_mvp": "Jugador Més Valuós (MVP)",
+      "burndown_chart_title": "📉 Burndown Chart",
+      "burndown_chart_desc_closed": "Com va evolucionar la feina en aquest Sprint.",
+      "burndown_chart_desc_active": "Com estem desfogant les tasques vs el ritme ideal.",
+      "ideal_pace": "Ritme Ideal",
+      "real_pending_tasks": "Tasques Pendents",
+
+      // Èpiques (Nou)
+      "create_epic_btn": "🏷️ Crear Èpica",
+      "epic_label": "Èpica (Opcional)",
+      "no_epic": "Sense èpica",
+      "create_epic_modal_title": "✨ Crear Nova Èpica",
+      "create_epic_modal_desc": "Agrupa tasques sota una mateixa categoria i color.",
+      "epic_title_label": "Títol de l'Èpica",
+      "epic_title_placeholder": "Ex: UI/UX i Frontend",
+      "epic_desc_label": "Descripció (Opcional)",
+      "epic_desc_placeholder": "De què tracta aquest grup de tasques?",
+      "epic_color_label": "Color de l'Etiqueta",
+      "submit_epic_btn": "Crear Èpica",
+      "success_create_epic": "Èpica creada correctament!",
+      "error_create_epic": "Error al crear l'Èpica",
 
       // Create Task Modal
       "new_task_modal_title": "Nova Tasca",
@@ -92,7 +121,7 @@ const resources = {
       "create_task_btn": "Crear Tasca",
       "error_create_task": "Error en crear la tasca. Revisa les dades.",
 
-      // Edit Task Modal
+      // Edit Task Modal & Zen Mode
       "edit_task_title": "Editar Tasca",
       "confirm_delete_task": "Segur que vols esborrar aquesta tasca? (S'esborraran també les subtasques i comentaris)",
       "confirm_delete_subtask": "Esborrar aquesta subtasca?",
@@ -112,7 +141,17 @@ const resources = {
       "send": "Enviar",
       "delete_task_btn": "Esborrar Tasca",
       "save_changes_btn": "Guardar Canvis",
+      "zen_mode_title": "Mode Focus",
+      "zen_mode_desc": "Concentra't en aquesta tasca amb un compte enrere de 25m.",
+      "start_focus_btn": "🧘‍♂️ Començar a treballar",
+      "exit_focus_btn": "✕ SORTIR DEL FOCUS",
+      "focus_mode_active": "Mode Focus Activat",
+      "no_desc_focus": "Sense descripció. Concentra't en completar el títol!",
+      "pause_btn": "⏸ PAUSA",
+      "start_btn": "▶ COMENÇAR",
+      "restart_btn": "🔄 REINICIAR",
 
+      // Rendiment (vell) i Activitat
       "sprint_performance_title": "Rendiment dels Sprints",
       "sprint_performance_desc": "Estat de les tasques segons la seva iteració",
       "pending_tasks": "Pendents",
@@ -207,13 +246,42 @@ const resources = {
       "type_feature": "Feature",
       "type_bug": "Bug",
 
-      // Estadísticas
+      // Estadísticas y Burndown Chart
       "unassigned": "Sin asignar",
       "no_data_stats": "¡No hay suficientes datos para generar estadísticas. Crea algunas tareas primero!",
       "global_status": "Estado Global del Proyecto",
       "status_distribution": "Distribución de las {{count}} tareas por columna",
       "workload_per_member": "Carga de Trabajo por Miembro",
       "tasks_assigned_to_user": "Tareas asignadas a cada usuario",
+      "performance_board_title": "Tablero de Rendimiento",
+      "performance_board_desc": "Analiza el proyecto o viaja al pasado para ver cómo fueron los Sprints.",
+      "select_view_label": "Selecciona la vista",
+      "global_view": "🌍 Visión Global (Proyecto entero)",
+      "sprint_achieved": "Conseguido",
+      "sprint_closed_so_far": "Cerrado hasta ahora",
+      "sprint_failed": "Fallado / Al Backlog",
+      "sprint_in_progress": "En Curso / Pendiente",
+      "sprint_mvp": "Jugador Más Valioso (MVP)",
+      "burndown_chart_title": "📉 Burndown Chart",
+      "burndown_chart_desc_closed": "Cómo evolucionó el trabajo en este Sprint.",
+      "burndown_chart_desc_active": "Cómo estamos liquidando las tareas vs el ritmo ideal.",
+      "ideal_pace": "Ritmo Ideal",
+      "real_pending_tasks": "Tareas Pendientes",
+
+      // Épicas (Nuevo)
+      "create_epic_btn": "🏷️ Crear Épica",
+      "epic_label": "Épica (Opcional)",
+      "no_epic": "Sin épica",
+      "create_epic_modal_title": "✨ Crear Nueva Épica",
+      "create_epic_modal_desc": "Agrupa tareas bajo una misma categoría y color.",
+      "epic_title_label": "Título de la Épica",
+      "epic_title_placeholder": "Ej: UI/UX y Frontend",
+      "epic_desc_label": "Descripción (Opcional)",
+      "epic_desc_placeholder": "¿De qué trata este grupo de tareas?",
+      "epic_color_label": "Color de la Etiqueta",
+      "submit_epic_btn": "Crear Épica",
+      "success_create_epic": "¡Épica creada correctamente!",
+      "error_create_epic": "Error al crear la Épica",
 
       // Create Task Modal
       "new_task_modal_title": "Nueva Tarea",
@@ -231,7 +299,7 @@ const resources = {
       "create_task_btn": "Crear Tarea",
       "error_create_task": "Error al crear la tarea. Revisa los datos.",
 
-      // Edit Task Modal
+      // Edit Task Modal & Zen Mode
       "edit_task_title": "Editar Tarea",
       "confirm_delete_task": "¿Seguro que quieres borrar esta tarea? (Se borrarán también las subtareas y comentarios)",
       "confirm_delete_subtask": "¿Borrar esta subtarea?",
@@ -251,6 +319,17 @@ const resources = {
       "send": "Enviar",
       "delete_task_btn": "Borrar Tarea",
       "save_changes_btn": "Guardar Cambios",
+      "zen_mode_title": "Modo Focus",
+      "zen_mode_desc": "Concéntrate en esta tarea con una cuenta atrás de 25m.",
+      "start_focus_btn": "🧘‍♂️ Empezar a trabajar",
+      "exit_focus_btn": "✕ SALIR DEL FOCUS",
+      "focus_mode_active": "Modo Focus Activado",
+      "no_desc_focus": "Sin descripción. ¡Concéntrate en completar el título!",
+      "pause_btn": "⏸ PAUSA",
+      "start_btn": "▶ EMPEZAR",
+      "restart_btn": "🔄 REINICIAR",
+
+      // Rendimiento y Actividad
       "sprint_performance_title": "Rendimiento de los Sprints",
       "sprint_performance_desc": "Estado de las tareas según su iteración",
       "pending_tasks": "Pendientes",
@@ -345,13 +424,42 @@ const resources = {
       "type_feature": "Feature",
       "type_bug": "Bug",
 
-      // Statistics
+      // Statistics and Burndown Chart
       "unassigned": "Unassigned",
       "no_data_stats": "Not enough data to generate statistics. Create some tasks first!",
       "global_status": "Overall Project Status",
       "status_distribution": "Distribution of {{count}} tasks per column",
       "workload_per_member": "Workload per Member",
       "tasks_assigned_to_user": "Tasks assigned to each user",
+      "performance_board_title": "Performance Board",
+      "performance_board_desc": "Analyze the project or travel back in time to see past Sprints.",
+      "select_view_label": "Select view",
+      "global_view": "🌍 Global View (Entire project)",
+      "sprint_achieved": "Achieved",
+      "sprint_closed_so_far": "Closed so far",
+      "sprint_failed": "Failed / To Backlog",
+      "sprint_in_progress": "In Progress / Pending",
+      "sprint_mvp": "Most Valuable Player (MVP)",
+      "burndown_chart_title": "📉 Burndown Chart",
+      "burndown_chart_desc_closed": "How work evolved during this Sprint.",
+      "burndown_chart_desc_active": "How we are burning down tasks vs the ideal pace.",
+      "ideal_pace": "Ideal Pace",
+      "real_pending_tasks": "Pending Tasks",
+
+      // Epics (New)
+      "create_epic_btn": "🏷️ Create Epic",
+      "epic_label": "Epic (Optional)",
+      "no_epic": "No epic",
+      "create_epic_modal_title": "✨ Create New Epic",
+      "create_epic_modal_desc": "Group tasks under the same category and color.",
+      "epic_title_label": "Epic Title",
+      "epic_title_placeholder": "E.g.: UI/UX & Frontend",
+      "epic_desc_label": "Description (Optional)",
+      "epic_desc_placeholder": "What is this group of tasks about?",
+      "epic_color_label": "Label Color",
+      "submit_epic_btn": "Create Epic",
+      "success_create_epic": "Epic successfully created!",
+      "error_create_epic": "Error creating Epic",
 
       // Create Task Modal
       "new_task_modal_title": "New Task",
@@ -369,7 +477,7 @@ const resources = {
       "create_task_btn": "Create Task",
       "error_create_task": "Error creating task. Check the data.",
 
-      // Edit Task Modal
+      // Edit Task Modal & Zen Mode
       "edit_task_title": "Edit Task",
       "confirm_delete_task": "Are you sure you want to delete this task? (Subtasks and comments will also be deleted)",
       "confirm_delete_subtask": "Delete this subtask?",
@@ -389,6 +497,17 @@ const resources = {
       "send": "Send",
       "delete_task_btn": "Delete Task",
       "save_changes_btn": "Save Changes",
+      "zen_mode_title": "Focus Mode",
+      "zen_mode_desc": "Focus on this task with a 25m countdown.",
+      "start_focus_btn": "🧘‍♂️ Start working",
+      "exit_focus_btn": "✕ EXIT FOCUS",
+      "focus_mode_active": "Focus Mode Active",
+      "no_desc_focus": "No description. Focus on completing the title!",
+      "pause_btn": "⏸ PAUSE",
+      "start_btn": "▶ START",
+      "restart_btn": "🔄 RESTART",
+
+      // Performance and Activity
       "sprint_performance_title": "Sprint Performance",
       "sprint_performance_desc": "Task status according to their iteration",
       "pending_tasks": "Pending",
@@ -423,7 +542,7 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: "ca", // Idioma per defecte
+    lng: "ca", 
     fallbackLng: "en",
     interpolation: {
       escapeValue: false 

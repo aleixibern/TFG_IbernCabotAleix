@@ -29,7 +29,6 @@ public class Task {
     @Column(nullable = false)
     private TaskStatus status;
 
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
@@ -47,7 +46,6 @@ public class Task {
     @JoinColumn(name = "assignee_id")
     private User assignee;
 
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_task_id")
     private Task parentTask;
@@ -55,7 +53,6 @@ public class Task {
     @OneToMany(mappedBy = "parentTask", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Task> subtasks = new ArrayList<>();
-
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
@@ -70,6 +67,11 @@ public class Task {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sprint_id")
     private Sprint sprint;
+
+    // NOU CAMP: Enllaç amb l'Èpica
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "epic_id")
+    private Epic epic;
 
     @ElementCollection
     @CollectionTable(name = "task_links", joinColumns = @JoinColumn(name = "task_id"))

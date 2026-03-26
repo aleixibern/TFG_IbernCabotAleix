@@ -5,4 +5,7 @@ export interface Sprint {
     endDate: string;
     projectId: number;
     status: 'PLANNED' | 'ACTIVE' | 'CLOSED';
+    completedTasks?: number;
+    pendingTasks?: number;
+    mvpUserName?: string;
 }

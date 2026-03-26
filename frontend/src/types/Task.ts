@@ -8,12 +8,12 @@ export const TaskStatus = {
 
 export type TaskStatus = typeof TaskStatus[keyof typeof TaskStatus];
 
-// Interfície auxiliar per les dependències
 export interface TaskDependency {
     id: number;
     title: string;
     status: string;
 }
+import type { Epic } from './Epic';
 
 export interface Task {
     id: number;
@@ -21,7 +21,7 @@ export interface Task {
     description: string;
     status: TaskStatus;
     createdAt: string;
-    
+    epic?: Epic;
     type?: 'TASK' | 'FEATURE' | 'BUG';
     priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
     dueDate?: string;

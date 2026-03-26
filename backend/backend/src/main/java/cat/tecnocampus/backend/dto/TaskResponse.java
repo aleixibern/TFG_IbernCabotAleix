@@ -25,11 +25,21 @@ public class TaskResponse {
     private List<String> links;
     private List<DependencyDto> dependencies;
 
+    private EpicDto epic;
+
     @Data
     @AllArgsConstructor
     public static class DependencyDto {
         private Long id;
         private String title;
         private String status;
+    }
+
+    @Data
+    @AllArgsConstructor
+    public static class EpicDto {
+        private Long id;
+        private String title;
+        private String color;
     }
 }

@@ -32,4 +32,14 @@ public class Sprint {
 
     @Enumerated(EnumType.STRING)
     private SprintStatus status;
+
+    // NOU: CAMPS PER GUARDAR CONSTÀNCIA DEL RESUM D'SPRINT
+    @Column(name = "completed_tasks_count")
+    private Integer completedTasksCount;
+
+    @Column(name = "pending_tasks_count")
+    private Integer pendingTasksCount;
+
+    @Column(name = "mvp_user_name")
+    private String mvpUserName;
 }

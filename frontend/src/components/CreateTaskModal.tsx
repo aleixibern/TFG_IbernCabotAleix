@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input, Textarea, Select, SelectItem } from "@heroui/react";
 import { useTranslation } from 'react-i18next';
 import { taskService } from '../services/taskService';
+import { epicService } from '../services/epicService';
+import type { Epic } from '../types/Epic';
 
 interface Props {
     isOpen: boolean;
@@ -20,6 +22,8 @@ export const CreateTaskModal = ({ isOpen, onOpenChange, projectId, onTaskCreated
     const [priority, setPriority] = useState('MEDIUM');
     const [dueDate, setDueDate] = useState('');
     const [assigneeEmail, setAssigneeEmail] = useState('');
+    const [epicId, setEpicId] = useState('');
+    const [epics, setEpics] = useState<Epic[]>([]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -30,8 +34,19 @@ export const CreateTaskModal = ({ isOpen, onOpenChange, projectId, onTaskCreated
             setPriority('MEDIUM');
             setDueDate('');
             setAssigneeEmail('');
+            setEpicId('');
+            loadEpics();
         }
     }, [isOpen]);
+
+    const loadEpics = async () => {
+        try {
+            const data = await epicService.getEpicsByProject(projectId);
+            setEpics(data);
+        } catch (error) {
+            console.error("Error carregant èpiques", error);
+        }
+    };
 
     const handleCreate = async (onClose: () => void) => {
         if (!title) return;
@@ -44,7 +59,8 @@ export const CreateTaskModal = ({ isOpen, onOpenChange, projectId, onTaskCreated
                 priority,
                 dueDate: dueDate || undefined,
                 assigneeEmail: assigneeEmail || undefined,
-                sprintId: sprintId || undefined
+                sprintId: sprintId || undefined,
+                epicId: epicId && epicId !== '-1' ? Number(epicId) : undefined
             });
             
             setLoading(false);
@@ -56,6 +72,7 @@ export const CreateTaskModal = ({ isOpen, onOpenChange, projectId, onTaskCreated
             setPriority('MEDIUM'); 
             setDueDate(''); 
             setAssigneeEmail('');
+            setEpicId('');
 
             setTimeout(() => {
                 onTaskCreated(newTask);
@@ -102,6 +119,7 @@ export const CreateTaskModal = ({ isOpen, onOpenChange, projectId, onTaskCreated
                                         if (selectedKey) setType(selectedKey);
                                     }}
                                     variant="bordered"
+                                    className="flex-1"
                                 >
                                     <SelectItem key="TASK" textValue={`📝 ${t('type_task')}`}>📝 {t('type_task')}</SelectItem>
                                     <SelectItem key="FEATURE" textValue={`🚀 ${t('type_feature')}`}>🚀 {t('type_feature')}</SelectItem>
@@ -116,17 +134,42 @@ export const CreateTaskModal = ({ isOpen, onOpenChange, projectId, onTaskCreated
                                         if (selectedKey) setPriority(selectedKey);
                                     }} 
                                     variant="bordered"
+                                    className="flex-1"
                                 >
                                     <SelectItem key="LOW" textValue={`🟢 ${t('priority_low')}`}>🟢 {t('priority_low')}</SelectItem>
                                     <SelectItem key="MEDIUM" textValue={`🟡 ${t('priority_medium')}`}>🟡 {t('priority_medium')}</SelectItem>
                                     <SelectItem key="HIGH" textValue={`🟠 ${t('priority_high')}`}>🟠 {t('priority_high')}</SelectItem>
                                     <SelectItem key="URGENT" textValue={`🔴 ${t('priority_urgent')}`}>🔴 {t('priority_urgent')}</SelectItem>
                                 </Select>
+
+                                <Select 
+                                    label={t('epic_label')} 
+                                    placeholder={t('no_epic')}
+                                    selectedKeys={epicId ? new Set([epicId]) : new Set([])} 
+                                    onSelectionChange={(keys) => {
+                                        const selectedKey = Array.from(keys)[0] as string;
+                                        setEpicId(selectedKey || '');
+                                    }} 
+                                    variant="bordered"
+                                    className="flex-1"
+                                >
+                                    {[
+                                        <SelectItem key="-1" textValue={t('no_epic')}>{t('no_epic')}</SelectItem>,
+                                        ...epics.map(e => (
+                                            <SelectItem key={e.id.toString()} textValue={e.title}>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: e.color }}></span>
+                                                    <span>{e.title}</span>
+                                                </div>
+                                            </SelectItem>
+                                        ))
+                                    ]}
+                                </Select>
                             </div>
 
                             <div className="flex gap-4">
-                                <Input type="date" label={t('task_due_date')} value={dueDate} onValueChange={setDueDate} variant="bordered" />
-                                <Input label={t('task_assignee')} placeholder="usuari@exemple.com" value={assigneeEmail} onValueChange={setAssigneeEmail} variant="bordered" />
+                                <Input type="date" label={t('task_due_date')} value={dueDate} onValueChange={setDueDate} variant="bordered" className="flex-1" />
+                                <Input label={t('task_assignee')} placeholder={t('assignee_placeholder')} value={assigneeEmail} onValueChange={setAssigneeEmail} variant="bordered" className="flex-1" />
                             </div>
                         </ModalBody>
                         <ModalFooter>

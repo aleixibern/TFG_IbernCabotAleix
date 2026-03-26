@@ -5,6 +5,7 @@ import cat.tecnocampus.backend.domain.Task;
 import cat.tecnocampus.backend.domain.TaskStatus;
 import cat.tecnocampus.backend.domain.User;
 import cat.tecnocampus.backend.domain.UserProjectStats;
+import cat.tecnocampus.backend.domain.Epic;
 import cat.tecnocampus.backend.dto.TaskRequest;
 import cat.tecnocampus.backend.dto.TaskResponse;
 import cat.tecnocampus.backend.repository.ProjectRepository;
@@ -12,6 +13,7 @@ import cat.tecnocampus.backend.repository.SprintRepository;
 import cat.tecnocampus.backend.repository.TaskRepository;
 import cat.tecnocampus.backend.repository.UserRepository;
 import cat.tecnocampus.backend.repository.UserProjectStatsRepository;
+import cat.tecnocampus.backend.repository.EpicRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +31,7 @@ public class TaskService {
     private final SprintRepository sprintRepository;
     private final ActivityLogService activityLogService;
     private final UserProjectStatsRepository userProjectStatsRepository;
+    private final EpicRepository epicRepository; // NOU: Afegit el repositori d'èpiques
 
     // --- FUNCIÓ AUXILIAR: Calcular XP per prioritat ---
     private int calculateXp(Task task) {
@@ -130,6 +133,13 @@ public class TaskService {
             cat.tecnocampus.backend.domain.Sprint sprint = sprintRepository.findById(request.getSprintId())
                     .orElseThrow(() -> new RuntimeException("Sprint no trobat"));
             task.setSprint(sprint);
+        }
+
+        // NOU: Guardar l'Èpica si ve a la petició
+        if (request.getEpicId() != null) {
+            Epic epic = epicRepository.findById(request.getEpicId())
+                    .orElseThrow(() -> new RuntimeException("Èpica no trobada"));
+            task.setEpic(epic);
         }
 
         Task savedTask = taskRepository.save(task);
@@ -235,6 +245,9 @@ public class TaskService {
                 .parentTaskId(task.getParentTask() != null ? task.getParentTask().getId() : null)
                 .sprintId(task.getSprint() != null ? task.getSprint().getId() : null)
 
+                // NOU: Assignar l'epic si la tasca en té una
+                .epic(task.getEpic() != null ? new TaskResponse.EpicDto(task.getEpic().getId(), task.getEpic().getTitle(), task.getEpic().getColor()) : null)
+
                 .dependencies(task.getDependencies() != null ?
                         task.getDependencies().stream()
                                 .map(dep -> new TaskResponse.DependencyDto(dep.getId(), dep.getTitle(), dep.getStatus().name()))
@@ -298,6 +311,17 @@ public class TaskService {
                 cat.tecnocampus.backend.domain.Sprint sprint = sprintRepository.findById(request.getSprintId())
                         .orElseThrow(() -> new RuntimeException("Sprint no trobat"));
                 task.setSprint(sprint);
+            }
+        }
+
+        // NOU: Actualitzar l'Èpica si ve a la petició
+        if (request.getEpicId() != null) {
+            if (request.getEpicId() == -1) {
+                task.setEpic(null); // Esborrar l'èpica
+            } else {
+                Epic epic = epicRepository.findById(request.getEpicId())
+                        .orElseThrow(() -> new RuntimeException("Èpica no trobada"));
+                task.setEpic(epic);
             }
         }
 

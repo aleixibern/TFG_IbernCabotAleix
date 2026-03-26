@@ -7,15 +7,18 @@ import toast from 'react-hot-toast';
 import api from '../api/axios';
 import { taskService } from '../services/taskService';
 import { sprintService } from '../services/sprintService';
+import { epicService } from '../services/epicService'; 
 import type { Project } from '../types/Project';
 import type { User } from '../types/User';
 import { type Task, TaskStatus } from '../types/Task';
 import type { Sprint } from '../types/Sprint'; 
+import type { Epic } from '../types/Epic'; 
 import { MainLayout } from '../layouts/MainLayout';
 import { CreateTaskModal } from '../components/CreateTaskModal';
 import { EditTaskModal } from '../components/EditTaskModal';
 import { InviteMemberModal } from '../components/InviteMemberModal';
 import { CreateSprintModal } from '../components/CreateSprintModal'; 
+import { CreateEpicModal } from '../components/CreateEpicModal'; 
 import { ConfirmModal } from '../components/ConfirmModal';
 import { getInitials } from '../utils/stringUtils';
 import { ProjectAnalytics } from '../components/ProjectAnalytics';
@@ -54,12 +57,14 @@ export default function ProjectBoardPage() {
     const { isOpen: isEditOpen, onOpen: onEditOpen, onOpenChange: onEditOpenChange } = useDisclosure();
     const { isOpen: isInviteOpen, onOpen: onInviteOpen, onOpenChange: onInviteOpenChange } = useDisclosure();
     const { isOpen: isSprintOpen, onOpen: onSprintOpen, onOpenChange: onSprintOpenChange } = useDisclosure(); 
+    const { isOpen: isEpicOpen, onOpen: onEpicOpen, onOpenChange: onEpicOpenChange } = useDisclosure(); 
 
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [project, setProject] = useState<Project | null>(null);
     const [user, setUser] = useState<User | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [sprints, setSprints] = useState<Sprint[]>([]); 
+    const [epics, setEpics] = useState<Epic[]>([]); 
     const [loading, setLoading] = useState(true);
 
     const [filterType, setFilterType] = useState<string>("ALL");
@@ -86,17 +91,19 @@ export default function ProjectBoardPage() {
         const fetchData = async () => {
             if (!id) return;
             try {
-                const [projectRes, userRes, tasksRes, sprintsRes] = await Promise.all([
+                const [projectRes, userRes, tasksRes, sprintsRes, epicsRes] = await Promise.all([
                     api.get<Project>(`/projects/${id}`),
                     api.get<User>('/users/me'),
                     taskService.getTasksByProject(id),
-                    sprintService.getSprintsByProject(id)
+                    sprintService.getSprintsByProject(id),
+                    epicService.getEpicsByProject(id) 
                 ]);
                 
                 setProject(projectRes.data);
                 setUser(userRes.data);
                 setTasks(tasksRes);
                 setSprints(sprintsRes); 
+                setEpics(epicsRes); 
             } catch (error) {
                 console.error("Error carregant dades", error);
                 navigate('/dashboard'); 
@@ -182,11 +189,17 @@ export default function ProjectBoardPage() {
                     });
                     
                     setConfirmData(null); 
-                    
                     setIsStoryOpen(true);
 
                     const updatedSprint = await sprintService.completeSprint(id, sprintId);
                     setSprints(prev => prev.map(s => s.id === sprintId ? updatedSprint : s));
+                    
+                    setTasks(prev => prev.map(t => 
+                        (t.sprintId === sprintId && t.status !== 'DONE') 
+                            ? { ...t, sprintId: null, status: TaskStatus.BACKLOG } 
+                            : t
+                    ));
+
                     setActiveTab("backlog");
 
                 } catch (error) {
@@ -252,7 +265,7 @@ export default function ProjectBoardPage() {
         <MainLayout username={user?.username} email={user?.email}>
             <div className="flex flex-col h-full gap-5">
                 
-                <div className="flex justify-between items-center px-2 text-foreground">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center px-2 text-foreground gap-4">
                     <div>
                         <h1 className="text-3xl font-bold">{project?.title}</h1>
                         <div className="flex gap-2 items-center text-default-500">
@@ -260,7 +273,10 @@ export default function ProjectBoardPage() {
                             {project?.subject && <Chip size="sm" variant="flat" color="secondary">📚 {project.subject}</Chip>}
                         </div>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap gap-2">
+                        <Button color="secondary" variant="bordered" onPress={onEpicOpen}>
+                            {t('create_epic_btn')}
+                        </Button>
                         <Button color="secondary" variant="flat" onPress={onInviteOpen}>👥 {t('invite_button')}</Button>
                         <Button color="primary" variant="shadow" onPress={onCreateOpen}>{t('new_task_button')}</Button>
                     </div>
@@ -320,15 +336,26 @@ export default function ProjectBoardPage() {
                                                         <Draggable key={`sp-${task.id}`} draggableId={task.id.toString()} index={index}>
                                                             {(provided) => (
                                                                 <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
-                                                                    className="bg-content2 p-3 rounded-lg border border-divider flex justify-between items-center mb-2 hover:border-primary/50 cursor-grab shadow-sm"
+                                                                    className="bg-content2 p-3 rounded-lg border border-divider flex flex-col mb-2 hover:border-primary/50 cursor-grab shadow-sm"
                                                                     onClick={() => { setSelectedTask(task); onEditOpen(); }}>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="text-sm text-foreground font-medium">{task.title}</span>
-                                                                        {task.links && task.links.length > 0 && (
-                                                                            <span className="text-xs opacity-50" title={`${task.links.length} enllaços`}>🔗</span>
-                                                                        )}
+                                                                    
+                                                                    {task.epic && (
+                                                                        <div className="mb-1">
+                                                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded text-white" style={{ backgroundColor: task.epic.color }}>
+                                                                                {task.epic.title}
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+
+                                                                    <div className="flex justify-between items-center">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="text-sm text-foreground font-medium">{task.title}</span>
+                                                                            {task.links && task.links.length > 0 && (
+                                                                                <span className="text-xs opacity-50" title={`${task.links.length} enllaços`}>🔗</span>
+                                                                            )}
+                                                                        </div>
+                                                                        <Chip size="sm" variant="flat">{task.status}</Chip>
                                                                     </div>
-                                                                    <Chip size="sm" variant="flat">{task.status}</Chip>
                                                                 </div>
                                                             )}
                                                         </Draggable>
@@ -360,17 +387,28 @@ export default function ProjectBoardPage() {
                                                     <Draggable key={`bl-${task.id}`} draggableId={task.id.toString()} index={index}>
                                                         {(provided) => (
                                                             <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
-                                                                className="bg-content2 p-3 rounded-lg border border-divider flex justify-between items-center mb-2 hover:border-primary/50 cursor-grab shadow-sm"
+                                                                className="bg-content2 p-3 rounded-lg border border-divider flex flex-col mb-2 hover:border-primary/50 cursor-grab shadow-sm"
                                                                 onClick={() => { setSelectedTask(task); onEditOpen(); }}>
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className="text-sm text-foreground font-medium">{task.title}</span>
-                                                                    {task.links && task.links.length > 0 && (
-                                                                        <span className="text-xs opacity-50" title={`${task.links.length} enllaços`}>🔗</span>
-                                                                    )}
-                                                                </div>
-                                                                <div className="flex gap-2 items-center">
-                                                                    {task.assigneeName && <Chip size="sm" variant="dot" color="primary">{task.assigneeName}</Chip>}
-                                                                    <Chip size="sm" variant="flat">{task.status}</Chip>
+                                                                
+                                                                {task.epic && (
+                                                                    <div className="mb-1">
+                                                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded text-white" style={{ backgroundColor: task.epic.color }}>
+                                                                            {task.epic.title}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+
+                                                                <div className="flex justify-between items-center">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-sm text-foreground font-medium">{task.title}</span>
+                                                                        {task.links && task.links.length > 0 && (
+                                                                            <span className="text-xs opacity-50" title={`${task.links.length} enllaços`}>🔗</span>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="flex gap-2 items-center">
+                                                                        {task.assigneeName && <Chip size="sm" variant="dot" color="primary">{task.assigneeName}</Chip>}
+                                                                        <Chip size="sm" variant="flat">{task.status}</Chip>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         )}
@@ -487,7 +525,14 @@ export default function ProjectBoardPage() {
                                                                     <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
                                                                          onClick={() => { setSelectedTask(task); onEditOpen(); }}>
                                                                         <Card className="bg-content1 border border-divider hover:border-primary/50 cursor-grab shadow-sm">
-                                                                            <CardHeader className="pb-0 text-foreground font-semibold text-sm">{task.title}</CardHeader>
+                                                                            <CardHeader className="pb-0 text-foreground font-semibold text-sm flex flex-col items-start gap-1">
+                                                                                {task.epic && (
+                                                                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded text-white" style={{ backgroundColor: task.epic.color }}>
+                                                                                        {task.epic.title}
+                                                                                    </span>
+                                                                                )}
+                                                                                <span>{task.title}</span>
+                                                                            </CardHeader>
                                                                             <CardBody className="pt-3 pb-3 text-xs">
                                                                                 <div className="flex justify-between items-center w-full mt-2">
                                                                                     <div className="flex flex-wrap gap-1 items-center">
@@ -582,6 +627,16 @@ export default function ProjectBoardPage() {
                     onSprintCreated={(newSprint) => {
                         setSprints([...sprints, newSprint]);
                         toast.success(t('sprint_created_success', { defaultValue: 'Nou Sprint planificat!' })); 
+                    }} 
+                />
+
+                <CreateEpicModal 
+                    isOpen={isEpicOpen} 
+                    onOpenChange={onEpicOpenChange} 
+                    projectId={id!} 
+                    onEpicCreated={(newEpic) => {
+                        setEpics([...epics, newEpic]);
+                        toast.success(t('success_create_epic', { defaultValue: 'Èpica creada correctament!' }));
                     }} 
                 />
 

@@ -17,4 +17,6 @@ public class TaskRequest {
     private Long sprintId;
     private List<String> links;
     private List<Long> dependencyIds;
+
+    private Long epicId;
 }
