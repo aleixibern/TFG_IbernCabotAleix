@@ -39,7 +39,7 @@ Per facilitar l'avaluació d'aquest TFG, l'aplicació està completament dockeri
 
 1\. Obre un terminal a l'arrel del projecte (on es troba el fitxer `docker-compose.yml`).
 
-2\. Executa la següent comanda per compilar i aixecar tots els serveis:
+2\. Executa la següent comanda per compilar i aixecar tots els serveis ( la app s'executa a http://localhost:80 ):
 
 
 
