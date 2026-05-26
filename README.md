@@ -21,7 +21,7 @@ Amb una visió ràpida i precisa (com un linx), l'aplicació permet als equips o
 
 ------------------------------------------------------------------
 
-\# Instal·lació i Execució Ràpida (Docker) 
+## Instal·lació i Execució Ràpida (Docker) 
 
 
 
@@ -29,13 +29,13 @@ Per facilitar l'avaluació d'aquest TFG, l'aplicació està completament dockeri
 
 
 
-\### Prerequisits
+\## Prerequisits
 
 \- Tenir instal·lat \[Docker Desktop](https://www.docker.com/products/docker-desktop/) a la màquina.
 
 
 
-\### Passos per arrencar l'aplicació
+\## Passos per arrencar l'aplicació
 
 1\. Obre un terminal a l'arrel del projecte (on es troba el fitxer `docker-compose.yml`).
 
@@ -46,4 +46,11 @@ Per facilitar l'avaluació d'aquest TFG, l'aplicació està completament dockeri
 &nbsp;  ```bash
 
 &nbsp;  docker-compose up --build
+
+\## Accés a l'entorn
+
+Un cop la comanda anterior hagi acabat i els contenidors estiguin funcionant, l'aplicació estarà disponible al port 80 de la teva màquina.
+
+Pots obrir-la directament des del teu navegador fent clic aquí: 
+http://localhost:80
 
